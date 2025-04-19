@@ -1,11 +1,16 @@
 package main
 
 import (
+	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/config"
+	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/database"
 	"github.com/gin-gonic/gin"
 	"log"
 )
 
 func main() {
+	cfg := config.LoadConfig()
+	database.InitDB(cfg)
+
 	r := gin.Default()
 
 	r.GET("/", func(c *gin.Context) {
