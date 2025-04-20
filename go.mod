@@ -2,7 +2,13 @@ module github.com/ArthurDelaporte/OnlyFeed-Back
 
 go 1.24.2
 
-require github.com/gin-gonic/gin v1.10.0
+require (
+	github.com/gin-gonic/gin v1.10.0
+	github.com/golang-jwt/jwt/v5 v5.2.2
+	github.com/joho/godotenv v1.5.1
+	gorm.io/driver/postgres v1.5.11
+	gorm.io/gorm v1.25.12
+)
 
 require (
 	github.com/bytedance/sonic v1.11.6 // indirect
@@ -40,8 +46,5 @@ require (
 	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 	google.golang.org/protobuf v1.36.1 // indirect
-	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	gorm.io/driver/postgres v1.5.11 // indirect
-	gorm.io/gorm v1.25.12 // indirect
 )
