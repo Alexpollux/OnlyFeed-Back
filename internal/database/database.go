@@ -1,22 +1,30 @@
 package database
 
 import (
-	"log"
-
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-
-	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/config"
+	"gorm.io/gorm/logger"
+	"log"
 )
 
 var DB *gorm.DB
 
-func InitDB(cfg *config.Config) {
+func Connect(dsn string) {
 	var err error
-	DB, err = gorm.Open(postgres.Open(cfg.DBUrl), &gorm.Config{})
+	DB, err = gorm.Open(postgres.New(postgres.Config{
+		DSN:                  dsn,
+		PreferSimpleProtocol: true,
+	}), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Info), // 👀 Log niveau info
+	})
 	if err != nil {
-		log.Fatalf("Échec connexion base de données: %v", err)
+		log.Fatalf("Erreur de connexion à Supabase: %v", err)
 	}
 
-	log.Println("✅ Connexion Supabase établie avec succès")
+	log.Println("✅ Connecté à Supabase")
+
+	//err = DB.AutoMigrate(&user.User{})
+	//if err != nil {
+	//	log.Fatalf("Erreur migration : %v", err)
+	//}
 }
