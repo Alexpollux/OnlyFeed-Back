@@ -27,6 +27,7 @@ func Signup(c *gin.Context) {
 		Lastname  string `json:"lastname"`
 		AvatarURL string `json:"avatar_url"`
 		Bio       string `json:"bio"`
+		Language  string `json:"language"`
 	}
 	if err := c.BindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Requête invalide"})
@@ -45,6 +46,15 @@ func Signup(c *gin.Context) {
 	}
 	if user.ExistsByUsername(input.Username) {
 		c.JSON(http.StatusConflict, gin.H{"error": "Nom d'utilisateur déjà utilisé"})
+		return
+	}
+
+	validLanguages := map[string]bool{
+		"fr": true,
+		"en": true,
+	}
+	if !validLanguages[input.Language] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Langue non supportée"})
 		return
 	}
 
@@ -108,6 +118,7 @@ func Signup(c *gin.Context) {
 		AvatarURL: input.AvatarURL,
 		Bio:       input.Bio,
 		Email:     input.Email,
+		Language:  input.Language,
 	}
 
 	if err := database.DB.Create(&newUser).Error; err != nil {

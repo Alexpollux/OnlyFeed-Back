@@ -11,4 +11,5 @@ type User struct {
 	AvatarURL string
 	Bio       string
 	Email     string
+	Language  string
 }

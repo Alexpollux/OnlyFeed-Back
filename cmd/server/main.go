@@ -2,10 +2,12 @@ package main
 
 import (
 	"os"
+	"time"
 
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/auth"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/database"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/middleware"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
@@ -20,15 +22,26 @@ func main() {
 	database.Connect(dsn)
 
 	r := gin.Default()
+	r.Use(cors.New(cors.Config{
+		AllowAllOrigins:  true,
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
+
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
 	api := r.Group("/api")
 
+	apiAuth := api.Group("/auth")
+
 	// Inscription & Connexion
-	api.POST("/signup", auth.Signup)
-	api.POST("/login", auth.Login)
+	apiAuth.POST("/signup", auth.Signup)
+	apiAuth.POST("/login", auth.Login)
 
 	api.Use(middleware.AuthMiddleware())
 	api.GET("/me", func(c *gin.Context) {
