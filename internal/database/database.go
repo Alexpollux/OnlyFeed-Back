@@ -21,8 +21,6 @@ func Connect(dsn string) {
 		log.Fatalf("Erreur de connexion à Supabase: %v", err)
 	}
 
-	log.Println("✅ Connecté à Supabase")
-
 	//err = DB.AutoMigrate(&user.User{})
 	//if err != nil {
 	//	log.Fatalf("Erreur migration : %v", err)

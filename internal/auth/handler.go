@@ -3,7 +3,6 @@ package auth
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -78,7 +77,6 @@ func Signup(c *gin.Context) {
 
 	// Lire la réponse AVANT de faire quoi que ce soit
 	respBytes, _ := io.ReadAll(resp.Body)
-	fmt.Println(string(respBytes))
 
 	if resp.StatusCode >= 400 {
 		c.JSON(resp.StatusCode, gin.H{"error": "Erreur Auth", "details": string(respBytes)})
