@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/storage"
+	"log"
 	"os"
 	"time"
 
@@ -14,12 +16,16 @@ import (
 
 func main() {
 	_ = godotenv.Load()
+
 	dsn := os.Getenv("SUPABASE_DB_URL")
 	if dsn == "" {
 		panic("SUPABASE_DB_URL manquant")
 	}
-
 	database.Connect(dsn)
+
+	if err := storage.InitS3(); err != nil {
+		log.Fatalf("❌ Init S3 : %v", err)
+	}
 
 	r := gin.Default()
 	r.Use(cors.New(cors.Config{

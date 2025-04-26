@@ -3,64 +3,60 @@ package auth
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
+	//"mime/multipart"
 	"net/http"
 	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/database"
+	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/storage"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/user"
 	"github.com/gin-gonic/gin"
 )
 
-// Signup : Inscription
 func Signup(c *gin.Context) {
 	supabaseBaseURL := os.Getenv("NEXT_PUBLIC_SUPABASE_URL")
 	supabaseAnonKey := os.Getenv("SUPABASE_ANON_KEY")
 
-	var input struct {
-		Email     string `json:"email"`
-		Password  string `json:"password"`
-		Username  string `json:"username"`
-		Firstname string `json:"firstname"`
-		Lastname  string `json:"lastname"`
-		AvatarURL string `json:"avatar_url"`
-		Bio       string `json:"bio"`
-		Language  string `json:"language"`
-	}
-	if err := c.BindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Requête invalide"})
-		return
-	}
+	// Lecture du form-data
+	email := c.PostForm("email")
+	password := c.PostForm("password")
+	username := c.PostForm("username")
+	firstname := c.PostForm("firstname")
+	lastname := c.PostForm("lastname")
+	bio := c.PostForm("bio")
+	language := c.PostForm("language")
 
-	if input.Email == "" || input.Password == "" || input.Username == "" {
+	if email == "" || password == "" || username == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Champs requis manquants"})
 		return
 	}
 
-	// Vérification que email et username n'existe pas
-	if user.ExistsByEmail(input.Email) {
+	// Vérification unique email/username
+	if user.ExistsByEmail(email) {
 		c.JSON(http.StatusConflict, gin.H{"error": "Email déjà utilisé"})
 		return
 	}
-	if user.ExistsByUsername(input.Username) {
+	if user.ExistsByUsername(username) {
 		c.JSON(http.StatusConflict, gin.H{"error": "Nom d'utilisateur déjà utilisé"})
 		return
 	}
 
-	validLanguages := map[string]bool{
-		"fr": true,
-		"en": true,
-	}
-	if !validLanguages[input.Language] {
+	// Vérification de la langue
+	validLanguages := map[string]bool{"fr": true, "en": true}
+	if language != "" && !validLanguages[language] {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Langue non supportée"})
 		return
 	}
 
-	// Étape 1 – Appel à Supabase Auth
+	// Étape 1 – Créer l'utilisateur dans Supabase Auth
 	authPayload := map[string]string{
-		"email":    input.Email,
-		"password": input.Password,
+		"email":    email,
+		"password": password,
 	}
 	jsonBody, _ := json.Marshal(authPayload)
 	req, _ := http.NewRequest("POST", supabaseBaseURL+"/auth/v1/signup", bytes.NewBuffer(jsonBody))
@@ -75,48 +71,64 @@ func Signup(c *gin.Context) {
 	}
 	defer resp.Body.Close()
 
-	// Lire la réponse AVANT de faire quoi que ce soit
 	respBytes, _ := io.ReadAll(resp.Body)
-
 	if resp.StatusCode >= 400 {
 		c.JSON(resp.StatusCode, gin.H{"error": "Erreur Auth", "details": string(respBytes)})
 		return
 	}
 
-	// Étape 2 –Extraire le user.id
-	// Sans la confirmation par mail
 	var authResp struct {
 		User struct {
 			ID string `json:"id"`
 		} `json:"user"`
 	}
-	// Avec la confirmation par mail
-	//var authResp struct {
-	//	ID string `json:"id"`
-	//}
 	if err := json.Unmarshal(respBytes, &authResp); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur parsing user.id"})
 		return
 	}
 
-	userID := authResp.User.ID // sans confirmation par mail
-	//userID := authResp.ID // avec confirmation par mail
+	userID := authResp.User.ID
 	if userID == "" {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Aucun ID utilisateur renvoyé par Supabase"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Aucun ID utilisateur renvoyé"})
 		return
 	}
 
-	// Étape 3 – Créer l’utilisateur dans ta table personnalisée
+	// Étape 2 – Upload avatar si présent
+	var avatarURL string
+
+	file, header, err := c.Request.FormFile("profile_picture")
+	if err == nil {
+		defer file.Close()
+
+		ext := strings.ToLower(filepath.Ext(header.Filename))
+		validExtensions := map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".gif": true, ".webp": true, ".heic": true}
+		if !validExtensions[ext] {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Extension fichier invalide"})
+			return
+		}
+
+		filename := fmt.Sprintf("user_%s%s", userID, ext)
+		contentType := header.Header.Get("Content-Type")
+
+		url, err := storage.UploadToS3(file, filename, contentType, "avatars")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur upload S3", "details": err.Error()})
+			return
+		}
+		avatarURL = url
+	}
+
+	// Étape 3 – Enregistrement final en BDD
 	newUser := user.User{
 		ID:        userID,
 		CreatedAt: time.Now(),
-		Username:  input.Username,
-		Firstname: input.Firstname,
-		Lastname:  input.Lastname,
-		AvatarURL: input.AvatarURL,
-		Bio:       input.Bio,
-		Email:     input.Email,
-		Language:  input.Language,
+		Username:  username,
+		Firstname: firstname,
+		Lastname:  lastname,
+		AvatarURL: avatarURL,
+		Bio:       bio,
+		Email:     email,
+		Language:  language,
 	}
 
 	if err := database.DB.Create(&newUser).Error; err != nil {
@@ -124,10 +136,10 @@ func Signup(c *gin.Context) {
 		return
 	}
 
-	// Réponse finale
 	c.JSON(http.StatusCreated, gin.H{
-		"message": "Utilisateur inscrit 🎉",
-		"user":    newUser,
+		"message":    "Utilisateur inscrit 🎉",
+		"user":       newUser,
+		"avatar_url": avatarURL,
 	})
 }
 
