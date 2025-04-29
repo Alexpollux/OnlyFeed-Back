@@ -21,20 +21,26 @@ func AuthMiddleware() gin.HandlerFunc {
 		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
 
 		jwtSecret := []byte(os.Getenv("JWT_SECRET"))
+
 		token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
-			// Vérifie que Supabase a bien utilisé HS256
+			// Vérifie que le JWT utilise bien HS256
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("signature invalide")
+				return nil, fmt.Errorf("Méthode de signature invalide : %v", token.Header["alg"])
 			}
 			return jwtSecret, nil
 		})
 
 		if err != nil || !token.Valid {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token invalide"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token invalide", "details": err.Error()})
 			return
 		}
 
-		claims := token.Claims.(jwt.MapClaims)
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Claims invalides"})
+			return
+		}
+
 		userID, ok := claims["sub"].(string)
 		if !ok {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "User ID manquant"})

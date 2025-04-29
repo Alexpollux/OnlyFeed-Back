@@ -5,17 +5,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	//"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
+
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/database"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/storage"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/user"
-	"github.com/gin-gonic/gin"
 )
 
 func Signup(c *gin.Context) {
