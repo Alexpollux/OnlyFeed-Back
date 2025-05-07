@@ -51,3 +51,14 @@ func UploadToS3(file multipart.File, filename string, contentType string, folder
 	publicURL := fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", s3Bucket, s3Region, key)
 	return publicURL, nil
 }
+
+func DeleteFromS3(key string) error {
+	_, err := s3Client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
+		Bucket: aws.String(s3Bucket),
+		Key:    aws.String(key),
+	})
+	if err != nil {
+		return fmt.Errorf("erreur suppression S3 : %w", err)
+	}
+	return nil
+}

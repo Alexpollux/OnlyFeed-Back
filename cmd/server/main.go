@@ -33,8 +33,8 @@ func main() {
 	r.Use(cors.New(cors.Config{
 		AllowAllOrigins:  true,
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "X-Refresh-Token"},
+		ExposeHeaders:    []string{"Content-Length", "X-New-Access-Token"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
@@ -47,17 +47,17 @@ func main() {
 
 	apiAuth := api.Group("/auth")
 
-	// Inscription & Connexion
+	// Pas besoin d'être connecté
 	apiAuth.POST("/signup", auth.Signup)
 	apiAuth.POST("/login", auth.Login)
 
-	// Oblige d'avoir un access_token en Authorization Bearer
+	apiAuth.POST("/logout", auth.Logout)
+
+	// Middleware général pour tout le reste
 	api.Use(middleware.AuthMiddleware())
 
-	api.GET("/me", func(c *gin.Context) {
-		userID := c.GetString("user_id")
-		c.JSON(200, gin.H{"user_id": userID})
-	})
+	api.GET("/me", user.GetMe)
+	api.PUT("/me", user.UpdateMe)
 
 	// Gestion utilisateurs
 	api.GET("/users/:id", user.GetUser)

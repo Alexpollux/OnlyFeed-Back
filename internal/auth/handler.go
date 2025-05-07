@@ -144,30 +144,115 @@ func Signup(c *gin.Context) {
 }
 
 func Login(c *gin.Context) {
-	supabaseBaseURL := os.Getenv("NEXT_PUBLIC_SUPABASE_URL") // idem ici
-	var body map[string]string
-	if err := c.BindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Requête invalide"})
+	supabaseBaseURL := os.Getenv("NEXT_PUBLIC_SUPABASE_URL")
+	supabaseAnonKey := os.Getenv("SUPABASE_ANON_KEY")
+
+	var input struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil || input.Email == "" || input.Password == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Champs email et password requis"})
 		return
 	}
 
-	jsonBody, _ := json.Marshal(body)
+	// Préparation de la requête
+	payload := map[string]string{
+		"email":    input.Email,
+		"password": input.Password,
+	}
+	jsonBody, _ := json.Marshal(payload)
+
 	req, _ := http.NewRequest(
 		"POST",
 		supabaseBaseURL+"/auth/v1/token?grant_type=password",
 		bytes.NewBuffer(jsonBody),
 	)
-	req.Header.Set("apikey", os.Getenv("SUPABASE_ANON_KEY"))
+	req.Header.Set("apikey", supabaseAnonKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	// Exécution
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur de connexion à Supabase"})
+		return
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, _ := io.ReadAll(resp.Body)
+
+	if resp.StatusCode >= 400 {
+		c.JSON(resp.StatusCode, gin.H{
+			"error":   "Erreur d'authentification",
+			"details": string(bodyBytes),
+		})
+		return
+	}
+
+	// Parsing de la réponse Supabase
+	var supabaseResp struct {
+		AccessToken  string `json:"access_token"`
+		TokenType    string `json:"token_type"`
+		ExpiresIn    int    `json:"expires_in"`
+		RefreshToken string `json:"refresh_token"`
+	}
+
+	if err := json.Unmarshal(bodyBytes, &supabaseResp); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur de parsing de la réponse Supabase"})
+		return
+	}
+
+	// Réponse personnalisée
+	c.JSON(http.StatusOK, gin.H{
+		"access_token":  supabaseResp.AccessToken,
+		"refresh_token": supabaseResp.RefreshToken,
+	})
+}
+
+func Logout(c *gin.Context) {
+	supabaseBaseURL := os.Getenv("NEXT_PUBLIC_SUPABASE_URL")
+	supabaseAnonKey := os.Getenv("SUPABASE_ANON_KEY")
+
+	authHeader := c.GetHeader("Authorization")
+	refreshToken := c.GetHeader("X-Refresh-Token")
+
+	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token requis"})
+		return
+	}
+	if refreshToken == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Refresh token requis"})
+		return
+	}
+
+	payload := map[string]string{"refresh_token": refreshToken}
+	jsonBody, _ := json.Marshal(payload)
+
+	req, err := http.NewRequest("POST", supabaseBaseURL+"/auth/v1/logout", bytes.NewBuffer(jsonBody))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur création requête Supabase"})
+		return
+	}
+
+	req.Header.Set("Authorization", authHeader)
+	req.Header.Set("apikey", supabaseAnonKey)
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur connexion Supabase"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur requête Supabase"})
 		return
 	}
 	defer resp.Body.Close()
 
-	respBody, _ := io.ReadAll(resp.Body)
-	c.Data(resp.StatusCode, "application/json", respBody)
+	if resp.StatusCode >= 400 {
+		body, _ := io.ReadAll(resp.Body)
+		c.JSON(resp.StatusCode, gin.H{"error": "Erreur logout Supabase", "details": string(body)})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Déconnexion réussie 👋"})
 }
