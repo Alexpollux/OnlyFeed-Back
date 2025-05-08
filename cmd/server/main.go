@@ -45,24 +45,29 @@ func main() {
 
 	api := r.Group("/api")
 
+	// /api/auth
 	apiAuth := api.Group("/auth")
-
-	// Pas besoin d'être connecté
 	apiAuth.POST("/signup", auth.Signup)
 	apiAuth.POST("/login", auth.Login)
-
 	apiAuth.POST("/logout", auth.Logout)
 
-	// Middleware général pour tout le reste
+	// /api/users/username
+	apiUsersUsername := api.Group("/users/username")
+	apiUsersUsername.GET("/:username", user.GetUserByUsername)
+
+	// access_token requis
 	api.Use(middleware.AuthMiddleware())
 
-	api.GET("/me", user.GetMe)
-	api.PUT("/me", user.UpdateMe)
+	// /api/me
+	apiMe := api.Group("/me")
+	apiMe.GET("/me", user.GetMe)
+	apiMe.PUT("/me", user.UpdateMe)
 
-	// Gestion utilisateurs
-	api.GET("/users/:id", user.GetUser)
-	api.PUT("/users/:id", user.UpdateUser)
-	api.DELETE("/users/:id", user.DeleteUser)
+	// /api/users
+	apiUsers := api.Group("/users")
+	apiUsers.GET("/:id", user.GetUser)
+	apiUsers.PUT("/:id", user.UpdateUser)
+	apiUsers.DELETE("/:id", user.DeleteUser)
 
 	err := r.Run(":8080")
 	if err != nil {

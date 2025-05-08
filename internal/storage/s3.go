@@ -3,12 +3,13 @@ package storage
 import (
 	"context"
 	"fmt"
+	"mime/multipart"
+	"os"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"mime/multipart"
-	"os"
 )
 
 var s3Client *s3.Client
