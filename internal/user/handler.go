@@ -13,23 +13,40 @@ import (
 // GetUser GET /api/users/:id
 func GetUser(c *gin.Context) {
 	id := c.Param("id")
-	var u User
+	var user User
 
-	if err := database.DB.First(&u, "id = ?", id).Error; err != nil {
+	if err := database.DB.First(&user, "id = ?", id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Utilisateur non trouvé"})
 		return
 	}
 
-	c.JSON(http.StatusOK, u)
+	// Construction de la réponse avec condition sur isAdmin
+	response := gin.H{
+		"id":         user.ID,
+		"email":      user.Email,
+		"username":   user.Username,
+		"firstname":  user.Firstname,
+		"lastname":   user.Lastname,
+		"avatar_url": user.AvatarURL,
+		"bio":        user.Bio,
+		"language":   user.Language,
+		"created_at": user.CreatedAt,
+	}
+
+	if user.IsAdmin {
+		response["is_admin"] = true
+	}
+
+	c.JSON(http.StatusOK, gin.H{"user": response})
 }
 
 // UpdateUser PATCH /api/users/:id
 func UpdateUser(c *gin.Context) {
 	id := c.Param("id")
-	var u User
+	var user User
 
 	// Vérifie que l'utilisateur existe
-	if err := database.DB.First(&u, "id = ?", id).Error; err != nil {
+	if err := database.DB.First(&user, "id = ?", id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Utilisateur non trouvé"})
 		return
 	}
@@ -42,12 +59,29 @@ func UpdateUser(c *gin.Context) {
 	}
 
 	// Update uniquement les champs fournis
-	if err := database.DB.Model(&u).Updates(input).Error; err != nil {
+	if err := database.DB.Model(&user).Updates(input).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur mise à jour utilisateur"})
 		return
 	}
 
-	c.JSON(http.StatusOK, u)
+	// Construction de la réponse avec condition sur isAdmin
+	response := gin.H{
+		"id":         user.ID,
+		"email":      user.Email,
+		"username":   user.Username,
+		"firstname":  user.Firstname,
+		"lastname":   user.Lastname,
+		"avatar_url": user.AvatarURL,
+		"bio":        user.Bio,
+		"language":   user.Language,
+		"created_at": user.CreatedAt,
+	}
+
+	if user.IsAdmin {
+		response["is_admin"] = true
+	}
+
+	c.JSON(http.StatusOK, gin.H{"user": response})
 }
 
 // DeleteUser DELETE /api/users/:id

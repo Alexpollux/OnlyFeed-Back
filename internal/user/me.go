@@ -21,7 +21,24 @@ func GetMe(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"user": user})
+	// Construction de la réponse avec condition sur isAdmin
+	response := gin.H{
+		"id":         user.ID,
+		"email":      user.Email,
+		"username":   user.Username,
+		"firstname":  user.Firstname,
+		"lastname":   user.Lastname,
+		"avatar_url": user.AvatarURL,
+		"bio":        user.Bio,
+		"language":   user.Language,
+		"created_at": user.CreatedAt,
+	}
+
+	if user.IsAdmin {
+		response["is_admin"] = true
+	}
+
+	c.JSON(http.StatusOK, gin.H{"user": response})
 }
 
 func UpdateMe(c *gin.Context) {
@@ -95,5 +112,22 @@ func UpdateMe(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Profil mis à jour", "user": user})
+	// Construction de la réponse avec condition sur isAdmin
+	response := gin.H{
+		"id":         user.ID,
+		"email":      user.Email,
+		"username":   user.Username,
+		"firstname":  user.Firstname,
+		"lastname":   user.Lastname,
+		"avatar_url": user.AvatarURL,
+		"bio":        user.Bio,
+		"language":   user.Language,
+		"created_at": user.CreatedAt,
+	}
+
+	if user.IsAdmin {
+		response["is_admin"] = true
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Profil mis à jour", "user": response})
 }

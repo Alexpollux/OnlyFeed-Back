@@ -26,5 +26,5 @@ func GetUserByUsername(c *gin.Context) {
 		"bio":        user.Bio,
 	}
 
-	c.JSON(http.StatusOK, publicUser)
+	c.JSON(http.StatusOK, gin.H{"user": publicUser})
 }

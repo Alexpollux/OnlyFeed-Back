@@ -60,8 +60,8 @@ func main() {
 
 	// /api/me
 	apiMe := api.Group("/me")
-	apiMe.GET("/me", user.GetMe)
-	apiMe.PUT("/me", user.UpdateMe)
+	apiMe.GET("", user.GetMe)
+	apiMe.PUT("", user.UpdateMe)
 
 	// /api/users
 	apiUsers := api.Group("/users")
