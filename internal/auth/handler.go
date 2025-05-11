@@ -16,6 +16,7 @@ import (
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/database"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/storage"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/user"
+	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/utils"
 )
 
 func Signup(c *gin.Context) {
@@ -204,10 +205,43 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	// Parser manuellement l'access_token pour extraire user_id (champ "sub")
+	tokenClaims := utils.ParseJWTClaims(supabaseResp.AccessToken)
+	userID, ok := tokenClaims["sub"].(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "ID utilisateur manquant dans le token"})
+		return
+	}
+
+	// Récupération du user depuis ta base
+	var u user.User
+	if err := database.DB.First(&u, "id = ?", userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Utilisateur introuvable en base"})
+		return
+	}
+
+	// Construction de la réponse avec condition sur isAdmin
+	respUser := gin.H{
+		"id":         u.ID,
+		"email":      u.Email,
+		"username":   u.Username,
+		"firstname":  u.Firstname,
+		"lastname":   u.Lastname,
+		"avatar_url": u.AvatarURL,
+		"bio":        u.Bio,
+		"language":   u.Language,
+		"created_at": u.CreatedAt,
+	}
+
+	if u.IsAdmin {
+		respUser["is_admin"] = true
+	}
+
 	// Réponse personnalisée
 	c.JSON(http.StatusOK, gin.H{
 		"access_token":  supabaseResp.AccessToken,
 		"refresh_token": supabaseResp.RefreshToken,
+		"user":          respUser,
 	})
 }
 
