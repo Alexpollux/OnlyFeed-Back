@@ -32,6 +32,7 @@ func GetMe(c *gin.Context) {
 		"bio":        user.Bio,
 		"language":   user.Language,
 		"created_at": user.CreatedAt,
+		"theme":      user.Theme,
 	}
 
 	if user.IsAdmin {
@@ -56,6 +57,7 @@ func UpdateMe(c *gin.Context) {
 	lastname := c.PostForm("lastname")
 	bio := c.PostForm("bio")
 	language := c.PostForm("language")
+	theme := c.PostForm("theme")
 
 	if username != "" {
 		user.Username = username
@@ -71,6 +73,9 @@ func UpdateMe(c *gin.Context) {
 	}
 	if language != "" {
 		user.Language = language
+	}
+	if theme != "" && (theme == "light" || theme == "dark") {
+		user.Theme = theme
 	}
 
 	// Vérification et remplacement de la photo
@@ -123,6 +128,7 @@ func UpdateMe(c *gin.Context) {
 		"bio":        user.Bio,
 		"language":   user.Language,
 		"created_at": user.CreatedAt,
+		"theme":      user.Theme,
 	}
 
 	if user.IsAdmin {

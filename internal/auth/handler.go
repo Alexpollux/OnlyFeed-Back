@@ -31,6 +31,10 @@ func Signup(c *gin.Context) {
 	lastname := c.PostForm("lastname")
 	bio := c.PostForm("bio")
 	language := c.PostForm("language")
+	theme := c.PostForm("theme")
+	if theme != "dark" {
+		theme = "light"
+	}
 
 	if email == "" || password == "" || username == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Champs requis manquants"})
@@ -130,6 +134,7 @@ func Signup(c *gin.Context) {
 		Bio:       bio,
 		Email:     email,
 		Language:  language,
+		Theme:     theme,
 	}
 
 	if err := database.DB.Create(&newUser).Error; err != nil {
@@ -138,9 +143,8 @@ func Signup(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"message":    "Utilisateur inscrit 🎉",
-		"user":       newUser,
-		"avatar_url": avatarURL,
+		"message": "Utilisateur inscrit 🎉",
+		"user":    newUser,
 	})
 }
 
@@ -231,6 +235,7 @@ func Login(c *gin.Context) {
 		"bio":        u.Bio,
 		"language":   u.Language,
 		"created_at": u.CreatedAt,
+		"theme":      u.Theme,
 	}
 
 	if u.IsAdmin {

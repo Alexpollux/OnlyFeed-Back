@@ -12,5 +12,6 @@ type User struct {
 	Bio       string
 	Email     string
 	Language  string
+	Theme     string
 	IsAdmin   bool
 }
