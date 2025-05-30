@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  backend:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: localhost/onlyfeed-backend:latest  # ← Même nom que K8s
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env 
+    environment:
+      - GIN_MODE=debug
+    restart: unless-stopped

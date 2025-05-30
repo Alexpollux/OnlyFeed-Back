@@ -21,5 +21,29 @@
 go.work
 go.work.sum
 
-# env file
+# Environment files
 .env
+.env.local
+.env.production
+.env.staging
+
+# Kubernetes secrets (IMPORTANT - ne jamais commit les secrets !)
+k8s/configmap.yaml
+
+# Fichiers de configuration Docker avec secrets
+docker-compose.override.yml
+docker-compose.prod.yml
+
+# Logs
+*.log
+logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

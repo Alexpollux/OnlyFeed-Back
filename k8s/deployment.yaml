@@ -1,0 +1,164 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: onlyfeed-backend
+  namespace: onlyfeed-backend
+  labels:
+    app: onlyfeed-backend
+    version: v1
+spec:
+  replicas: 2  # 2 instances pour la démo
+  selector:
+    matchLabels:
+      app: onlyfeed-backend
+  template:
+    metadata:
+      labels:
+        app: onlyfeed-backend
+        version: v1
+    spec:
+      containers:
+      - name: backend
+        image: localhost/onlyfeed-backend:latest  # Nom local unique
+        imagePullPolicy: Never  # Utilise l'image locale Docker
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        
+        # Variables d'environnement depuis ConfigMap
+        env:
+        - name: GIN_MODE
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: GIN_MODE
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: PORT
+        - name: AWS_REGION
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: AWS_REGION
+        - name: AWS_BUCKET_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: AWS_BUCKET_NAME
+        - name: NEXT_PUBLIC_SUPABASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: NEXT_PUBLIC_SUPABASE_URL
+        
+        # Variables sensibles depuis Secret
+        - name: SUPABASE_DB_URL
+          valueFrom:
+            secretKeyRef:
+              name: backend-secrets
+              key: SUPABASE_DB_URL
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: backend-secrets
+              key: JWT_SECRET
+        - name: SUPABASE_ANON_KEY
+          valueFrom:
+            secretKeyRef:
+              name: backend-secrets
+              key: SUPABASE_ANON_KEY
+        - name: SUPABASE_SERVICE_ROLE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: backend-secrets
+              key: SUPABASE_SERVICE_ROLE_KEY
+        - name: SUPABASE_JWKS_URL
+          valueFrom:
+            secretKeyRef:
+              name: backend-secrets
+              key: SUPABASE_JWKS_URL
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: backend-secrets
+              key: AWS_ACCESS_KEY_ID
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: backend-secrets
+              key: AWS_SECRET_ACCESS_KEY
+        - name: INSEE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: backend-secrets
+              key: INSEE_API_KEY
+        
+        # Health checks
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        
+        # Limites de ressources
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+
+---
+# Service interne (ClusterIP)
+apiVersion: v1
+kind: Service
+metadata:
+  name: onlyfeed-backend-service
+  namespace: onlyfeed-backend
+  labels:
+    app: onlyfeed-backend
+spec:
+  selector:
+    app: onlyfeed-backend
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+  type: ClusterIP
+
+---
+# Service externe pour test/démo (NodePort)
+apiVersion: v1
+kind: Service
+metadata:
+  name: onlyfeed-backend-external
+  namespace: onlyfeed-backend
+  labels:
+    app: onlyfeed-backend
+spec:
+  selector:
+    app: onlyfeed-backend
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+    nodePort: 30080  # Accessible sur localhost:30080
+    protocol: TCP
+  type: NodePort

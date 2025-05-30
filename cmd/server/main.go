@@ -12,6 +12,7 @@ import (
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/auth"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/database"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/middleware"
+	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/post" // Ajout de l'import pour le package post
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/storage"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/user"
 )
@@ -55,7 +56,16 @@ func main() {
 	apiUsersUsername := api.Group("/users/username")
 	apiUsersUsername.GET("/:username", user.GetUserByUsername)
 
-	// access_token requis
+	// Routes publiques pour les posts
+	// Cela permettra de récupérer tous les posts publics sans être connecté
+	api.GET("/posts", post.GetAllPosts) // Retourne seulement les posts gratuits si non authentifié
+
+	// IMPORTANT: Route pour les commentaires AVANT la route générique des posts
+	api.GET("/posts/:id/comments", post.GetCommentsByPostID) // Récupérer les commentaires d'un post
+
+	api.GET("/posts/:id", post.GetPostByID) // Vérifiera les autorisations pour les posts payants
+
+	// Routes protégées par authentification
 	api.Use(middleware.AuthMiddleware())
 
 	// /api/me
@@ -68,6 +78,16 @@ func main() {
 	apiUsers.GET("/:id", user.GetUser)
 	apiUsers.PUT("/:id", user.UpdateUser)
 	apiUsers.DELETE("/:id", user.DeleteUser)
+
+	// Routes pour les posts nécessitant une authentification
+	apiPosts := api.Group("/posts")
+	apiPosts.POST("", post.CreatePost)       // Créer un nouveau post
+	apiPosts.GET("/me", post.GetUserPosts)   // Récupérer les posts de l'utilisateur connecté
+	apiPosts.DELETE("/:id", post.DeletePost) // Supprimer un post
+
+	// Routes pour les commentaires nécessitant une authentification
+	api.POST("/comments", post.CreateComment)       // Créer un nouveau commentaire
+	api.DELETE("/comments/:id", post.DeleteComment) // Supprimer un commentaire
 
 	err := r.Run(":8080")
 	if err != nil {
