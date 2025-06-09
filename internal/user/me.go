@@ -31,7 +31,6 @@ func GetMe(c *gin.Context) {
 		"avatar_url": user.AvatarURL,
 		"bio":        user.Bio,
 		"language":   user.Language,
-		"created_at": user.CreatedAt,
 		"theme":      user.Theme,
 	}
 
@@ -127,7 +126,6 @@ func UpdateMe(c *gin.Context) {
 		"avatar_url": user.AvatarURL,
 		"bio":        user.Bio,
 		"language":   user.Language,
-		"created_at": user.CreatedAt,
 		"theme":      user.Theme,
 	}
 

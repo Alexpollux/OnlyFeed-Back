@@ -14,4 +14,5 @@ type User struct {
 	Language  string
 	Theme     string
 	IsAdmin   bool
+	_Deleted  bool
 }

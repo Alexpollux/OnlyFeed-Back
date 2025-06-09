@@ -30,7 +30,6 @@ func GetUser(c *gin.Context) {
 		"avatar_url": user.AvatarURL,
 		"bio":        user.Bio,
 		"language":   user.Language,
-		"created_at": user.CreatedAt,
 		"theme":      user.Theme,
 	}
 
@@ -75,7 +74,6 @@ func UpdateUser(c *gin.Context) {
 		"avatar_url": user.AvatarURL,
 		"bio":        user.Bio,
 		"language":   user.Language,
-		"created_at": user.CreatedAt,
 		"theme":      user.Theme,
 	}
 

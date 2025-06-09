@@ -234,7 +234,6 @@ func Login(c *gin.Context) {
 		"avatar_url": u.AvatarURL,
 		"bio":        u.Bio,
 		"language":   u.Language,
-		"created_at": u.CreatedAt,
 		"theme":      u.Theme,
 	}
 

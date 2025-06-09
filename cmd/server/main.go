@@ -11,8 +11,9 @@ import (
 
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/auth"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/database"
+	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/follow"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/middleware"
-	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/post" // Ajout de l'import pour le package post
+	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/post"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/storage"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/user"
 )
@@ -52,9 +53,14 @@ func main() {
 	apiAuth.POST("/login", auth.Login)
 	apiAuth.POST("/logout", auth.Logout)
 
+	// authentification optionnelle
+	api.Use(middleware.OptionalAuthMiddleware())
+
 	// /api/users/username
 	apiUsersUsername := api.Group("/users/username")
 	apiUsersUsername.GET("/:username", user.GetUserByUsername)
+
+	apiUsersUsername.GET("/:username/posts", post.GetPostsByUsername)
 
 	// Routes publiques pour les posts
 	// Cela permettra de récupérer tous les posts publics sans être connecté
@@ -88,6 +94,13 @@ func main() {
 	// Routes pour les commentaires nécessitant une authentification
 	api.POST("/comments", post.CreateComment)       // Créer un nouveau commentaire
 	api.DELETE("/comments/:id", post.DeleteComment) // Supprimer un commentaire
+
+	// /api/follow
+	apiFollow := api.Group("/follow")
+	apiFollow.POST("/:id", follow.FollowUser)
+	apiFollow.DELETE("/:id", follow.UnfollowUser)
+	apiFollow.GET("/", follow.GetFollowing)
+	apiFollow.GET("/followers/:id", follow.GetFollowers)
 
 	err := r.Run(":8080")
 	if err != nil {
