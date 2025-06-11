@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: onlyfeed-backend
+data:
+  GIN_MODE: "release"
+  PORT: "8080"
+  AWS_REGION: ""
+  AWS_BUCKET_NAME: ""
+  NEXT_PUBLIC_SUPABASE_URL: ""

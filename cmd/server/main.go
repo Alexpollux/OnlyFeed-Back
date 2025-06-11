@@ -102,7 +102,7 @@ func main() {
 	apiFollow.GET("/", follow.GetFollowing)
 	apiFollow.GET("/followers/:id", follow.GetFollowers)
 
-	err := r.Run(":8080")
+	err := r.Run("0.0.0.0:8080")
 	if err != nil {
 		return
 	}
