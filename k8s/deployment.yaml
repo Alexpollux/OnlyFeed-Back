@@ -19,8 +19,8 @@ spec:
     spec:
       containers:
       - name: backend
-        image: localhost/onlyfeed-backend:latest
-        imagePullPolicy: IfNotPresent
+        image: ghcr.io/arthurdelaporte/onlyfeed-backend:latest
+        imagePullPolicy: Always
         ports:
         - name: http
           containerPort: 8080
