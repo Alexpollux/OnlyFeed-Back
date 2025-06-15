@@ -13,6 +13,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+      - name: Configure gcloud + kubectl
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: awesome-pulsar-463009-g7
+          install_components: 'kubectl'
+          export_default_credentials: true
+
+      - name: Get GKE credentials
+        run: |
+          gcloud container clusters get-credentials onlyfeed-cluster \
+            --region europe-west9 \
+            --project awesome-pulsar-463009-g7
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -29,31 +47,6 @@ jobs:
           context: .
           push: true
           tags: ghcr.io/arthurdelaporte/onlyfeed-backend:latest
-
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'v1.31.1'
-
-      - name: Load kubeconfig from secret
-        run: |
-          echo "${{ secrets.KUBECONFIG_FILE }}" | base64 -d > kubeconfig.yaml
-          echo "KUBECONFIG=$PWD/kubeconfig.yaml" >> $GITHUB_ENV
-
-      - name: List available contexts
-        run: |
-          echo "KUBECONFIG=$KUBECONFIG"
-          kubectl config get-contexts
-          cat $KUBECONFIG
-
-      - name: Switch to GKE context
-        run: |
-          kubectl config use-context gke_awesome-pulsar-463009-g7_europe-west9_onlyfeed-cluster
-
-      - name: Debug context
-        run: |
-          kubectl config current-context
-          kubectl cluster-info
 
       - name: Create namespace if not exists
         run: |
