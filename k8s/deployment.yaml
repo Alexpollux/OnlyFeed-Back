@@ -146,7 +146,7 @@ spec:
   type: ClusterIP
 
 ---
-# Service externe pour test/démo (NodePort)
+# Service externe pour test/démo (LoadBalancer)
 apiVersion: v1
 kind: Service
 metadata:
@@ -158,9 +158,8 @@ spec:
   selector:
     app: onlyfeed-backend
   ports:
-  - name: http
-    port: 8080
-    targetPort: 8080
-    nodePort: 30080  # Accessible sur localhost:30080
-    protocol: TCP
-  type: NodePort
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+  type: LoadBalancer
