@@ -292,5 +292,5 @@ func Logout(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Déconnexion réussie 👋"})
+	c.JSON(http.StatusOK, gin.H{"message": "Déconnexion réussie"})
 }
