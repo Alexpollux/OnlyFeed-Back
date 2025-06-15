@@ -40,6 +40,15 @@ jobs:
           echo "${{ secrets.KUBECONFIG_FILE }}" | base64 -d > kubeconfig.yaml
           echo "KUBECONFIG=$PWD/kubeconfig.yaml" >> $GITHUB_ENV
 
+      - name: Debug context
+        run: |
+          kubectl config current-context
+          kubectl cluster-info
+
+      - name: Create namespace if not exists
+        run: |
+          kubectl create namespace onlyfeed-backend --dry-run=client -o yaml | kubectl apply -f -
+
       - name: Apply backend-secrets to Kubernetes
         run: |
           cat <<EOF | kubectl apply -f -
