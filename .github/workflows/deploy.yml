@@ -40,6 +40,12 @@ jobs:
           echo "${{ secrets.KUBECONFIG_FILE }}" | base64 -d > kubeconfig.yaml
           echo "KUBECONFIG=$PWD/kubeconfig.yaml" >> $GITHUB_ENV
 
+      - name: List available contexts
+        run: |
+          echo "KUBECONFIG=$KUBECONFIG"
+          kubectl config get-contexts
+          cat $KUBECONFIG
+
       - name: Switch to GKE context
         run: |
           kubectl config use-context gke_awesome-pulsar-463009-g7_europe-west9_onlyfeed-cluster
