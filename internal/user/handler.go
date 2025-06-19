@@ -31,6 +31,7 @@ func GetUser(c *gin.Context) {
 		"bio":        user.Bio,
 		"language":   user.Language,
 		"theme":      user.Theme,
+		"is_creator": user.IsCreator,
 	}
 
 	if user.IsAdmin {

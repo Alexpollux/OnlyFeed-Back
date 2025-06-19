@@ -2,6 +2,7 @@ package post
 
 import (
 	"fmt"
+	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/user"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -29,6 +30,17 @@ func CreatePost(c *gin.Context) {
 	isPaidStr := c.PostForm("is_paid")
 	isPaid := isPaidStr == "true"
 
+	var user user.User
+	if err := database.DB.First(&user, "id = ?", userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Utilisateur non trouvé"})
+		return
+	}
+
+	// Si l'utilisateur n'est pas créateur, forcer isPaid à false
+	if !user.IsCreator {
+		isPaid = false
+	}
+
 	// Vérification des champs obligatoires
 	if title == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Le titre est obligatoire"})
@@ -48,7 +60,7 @@ func CreatePost(c *gin.Context) {
 	validExtensions := map[string]bool{
 		".jpg": true, ".jpeg": true, ".png": true,
 		".gif": true, ".webp": true, ".heic": true,
-		".mp4": true, ".mov": true, ".avi": true, // Extensions vidéo si vous les supportez
+		".mp4": true, ".mov": true, ".avi": true,
 	}
 
 	if !validExtensions[ext] {
