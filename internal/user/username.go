@@ -28,6 +28,7 @@ func GetUserByUsername(c *gin.Context) {
 			"username":   user.Username,
 			"avatar_url": user.AvatarURL,
 			"bio":        user.Bio,
+			"is_creator": user.IsCreator,
 		},
 		"stats": gin.H{},
 	}

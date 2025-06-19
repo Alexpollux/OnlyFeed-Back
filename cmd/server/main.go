@@ -15,6 +15,7 @@ import (
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/middleware"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/post"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/storage"
+	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/stripe"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/user"
 )
 
@@ -101,6 +102,10 @@ func main() {
 	apiFollow.DELETE("/:id", follow.UnfollowUser)
 	apiFollow.GET("/", follow.GetFollowing)
 	apiFollow.GET("/followers/:id", follow.GetFollowers)
+
+	stripeGroup := api.Group("/stripe")
+	stripeGroup.POST("/create-account-link", stripe.CreateAccountLink)
+	stripeGroup.GET("/complete-connect", stripe.CompleteConnect)
 
 	err := r.Run("0.0.0.0:8080")
 	if err != nil {

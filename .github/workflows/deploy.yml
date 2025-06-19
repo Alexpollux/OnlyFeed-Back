@@ -63,9 +63,14 @@ jobs:
           type: Opaque
           stringData:
             AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
+            AWS_BUCKET_NAME: "${{ secrets.AWS_BUCKET_NAME }}"
+            AWS_REGION: "${{ secrets.AWS_REGION }}"
             AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+            DOMAIN_URL: "${{ secrets.DOMAIN_URL }}"
             INSEE_API_KEY: "${{ secrets.INSEE_API_KEY }}"
             JWT_SECRET: "${{ secrets.JWT_SECRET }}"
+            NEXT_PUBLIC_SUPABASE_URL: "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}"
+            STRIPE_SECRET_KEY: "${{ secrets.STRIPE_SECRET_KEY }}"
             SUPABASE_ANON_KEY: "${{ secrets.SUPABASE_ANON_KEY }}"
             SUPABASE_DB_URL: "${{ secrets.SUPABASE_DB_URL }}"
             SUPABASE_JWKS_URL: "${{ secrets.SUPABASE_JWKS_URL }}"
@@ -83,9 +88,6 @@ jobs:
           data:
             GIN_MODE: "release"
             PORT: "8080"
-            AWS_REGION: "eu-west-3"
-            AWS_BUCKET_NAME: "eemi-pec-of"
-            NEXT_PUBLIC_SUPABASE_URL: "https://wqbpzxspimzrueuhhhgn.supabase.co"
           EOF
 
       - name: Restart deployment
