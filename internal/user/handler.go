@@ -37,6 +37,9 @@ func GetUser(c *gin.Context) {
 	if user.IsAdmin {
 		response["is_admin"] = true
 	}
+	if user.IsCreator {
+		response["subscription_price"] = user.SubscriptionPrice
+	}
 
 	c.JSON(http.StatusOK, gin.H{"user": response})
 }
@@ -80,6 +83,9 @@ func UpdateUser(c *gin.Context) {
 
 	if user.IsAdmin {
 		response["is_admin"] = true
+	}
+	if user.IsCreator {
+		response["subscription_price"] = user.SubscriptionPrice
 	}
 
 	c.JSON(http.StatusOK, gin.H{"user": response})

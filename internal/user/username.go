@@ -53,6 +53,9 @@ func GetUserByUsername(c *gin.Context) {
 	} else {
 		dataUser["is_following"] = isFollowing
 	}
+	if user.IsCreator {
+		dataUser["user"].(gin.H)["subscription_price"] = user.SubscriptionPrice
+	}
 
 	var followersCount, subscribersCount, totalPosts, paidPosts int64
 
@@ -66,6 +69,16 @@ func GetUserByUsername(c *gin.Context) {
 	stats["subscribers_count"] = subscribersCount
 	stats["posts_count"] = totalPosts
 	stats["paid_posts_count"] = paidPosts
+
+	if user.ID == currentUserID {
+		var followupsCount, subscriptionsCount int64
+
+		database.DB.Model(&utils.Follow{}).Where("follower_id = ?", user.ID).Count(&followupsCount)
+		database.DB.Table("subscriptions").Where("subscriber_id = ?", user.ID).Count(&subscriptionsCount)
+
+		stats["followups_count"] = followupsCount
+		stats["subscriptions_count"] = subscriptionsCount
+	}
 
 	c.JSON(http.StatusOK, dataUser)
 }

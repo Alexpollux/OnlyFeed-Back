@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -23,20 +24,24 @@ func GetMe(c *gin.Context) {
 
 	// Construction de la réponse avec condition sur isAdmin
 	response := gin.H{
-		"id":         user.ID,
-		"email":      user.Email,
-		"username":   user.Username,
-		"firstname":  user.Firstname,
-		"lastname":   user.Lastname,
-		"avatar_url": user.AvatarURL,
-		"bio":        user.Bio,
-		"language":   user.Language,
-		"theme":      user.Theme,
-		"is_creator": user.IsCreator,
+		"id":                 user.ID,
+		"email":              user.Email,
+		"username":           user.Username,
+		"firstname":          user.Firstname,
+		"lastname":           user.Lastname,
+		"avatar_url":         user.AvatarURL,
+		"bio":                user.Bio,
+		"language":           user.Language,
+		"theme":              user.Theme,
+		"is_creator":         user.IsCreator,
+		"subscription_price": user.SubscriptionPrice,
 	}
 
 	if user.IsAdmin {
 		response["is_admin"] = true
+	}
+	if user.IsCreator {
+		response["subscription_price"] = user.SubscriptionPrice
 	}
 
 	c.JSON(http.StatusOK, gin.H{"user": response})
@@ -58,6 +63,7 @@ func UpdateMe(c *gin.Context) {
 	bio := c.PostForm("bio")
 	language := c.PostForm("language")
 	theme := c.PostForm("theme")
+	subscriptionPrice := c.PostForm("subscription_price")
 
 	if username != "" {
 		user.Username = username
@@ -74,8 +80,14 @@ func UpdateMe(c *gin.Context) {
 	if language != "" {
 		user.Language = language
 	}
-	if theme != "" && (theme == "light" || theme == "dark") {
+	if theme != "" && (theme == "light" || theme == "dark" || theme == "system") {
 		user.Theme = theme
+	}
+	if subscriptionPrice != "" && user.IsCreator == true {
+		fmt.Println(subscriptionPrice)
+		if subPrice, err := strconv.ParseFloat(subscriptionPrice, 64); err == nil && subPrice > 0 {
+			user.SubscriptionPrice = subPrice
+		}
 	}
 
 	// Vérification et remplacement de la photo
@@ -128,10 +140,14 @@ func UpdateMe(c *gin.Context) {
 		"bio":        user.Bio,
 		"language":   user.Language,
 		"theme":      user.Theme,
+		"is_creator": user.IsCreator,
 	}
 
 	if user.IsAdmin {
 		response["is_admin"] = true
+	}
+	if user.IsCreator {
+		response["subscription_price"] = user.SubscriptionPrice
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Profil mis à jour", "user": response})

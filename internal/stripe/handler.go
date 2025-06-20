@@ -69,9 +69,14 @@ func CompleteConnect(c *gin.Context) {
 		return
 	}
 
-	// Mise à jour de l’utilisateur : il devient créateur
-	if err := database.DB.Model(&user.User{}).Where("id = ?", userId).Update("is_creator", true).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur mise à jour StripeAccountID"})
+	// Mise à jour de l’utilisateur : il devient créateur avec un prix par défaut de 5€
+	updateData := map[string]interface{}{
+		"is_creator":         true,
+		"subscription_price": 5.0,
+	}
+
+	if err := database.DB.Model(&user.User{}).Where("id = ?", userId).Updates(updateData).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur mise à jour utilisateur"})
 		return
 	}
 

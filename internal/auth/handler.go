@@ -235,10 +235,14 @@ func Login(c *gin.Context) {
 		"bio":        u.Bio,
 		"language":   u.Language,
 		"theme":      u.Theme,
+		"is_creator": u.IsCreator,
 	}
 
 	if u.IsAdmin {
 		respUser["is_admin"] = true
+	}
+	if u.IsCreator {
+		respUser["subscription_price"] = u.SubscriptionPrice
 	}
 
 	// Réponse personnalisée
