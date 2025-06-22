@@ -74,8 +74,14 @@ func AuthMiddleware() gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "User ID manquant"})
 			return
 		}
+		userEmail, ok := claims["email"].(string)
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "User Email manquant"})
+			return
+		}
 
 		c.Set("user_id", userID)
+		c.Set("user_email", userEmail)
 		c.Next()
 	}
 }

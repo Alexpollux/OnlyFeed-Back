@@ -54,6 +54,9 @@ func main() {
 	apiAuth.POST("/login", auth.Login)
 	apiAuth.POST("/logout", auth.Logout)
 
+	// Appeler uniquement par stripe donc pas de token
+	api.POST("/stripe/webhook", stripe.HandleStripeWebhook)
+
 	// authentification optionnelle
 	api.Use(middleware.OptionalAuthMiddleware())
 
@@ -106,6 +109,7 @@ func main() {
 	stripeGroup := api.Group("/stripe")
 	stripeGroup.POST("/create-account-link", stripe.CreateAccountLink)
 	stripeGroup.GET("/complete-connect", stripe.CompleteConnect)
+	stripeGroup.POST("/create-subscription-session/:creator_id", stripe.CreateSubscriptionSession)
 
 	err := r.Run("0.0.0.0:8080")
 	if err != nil {

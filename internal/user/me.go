@@ -84,7 +84,6 @@ func UpdateMe(c *gin.Context) {
 		user.Theme = theme
 	}
 	if subscriptionPrice != "" && user.IsCreator == true {
-		fmt.Println(subscriptionPrice)
 		if subPrice, err := strconv.ParseFloat(subscriptionPrice, 64); err == nil && subPrice > 0 {
 			user.SubscriptionPrice = subPrice
 		}

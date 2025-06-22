@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/database"
-	//"github.com/ArthurDelaporte/OnlyFeed-Back/internal/subscription"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/user"
 	"github.com/gin-gonic/gin"
 )
@@ -46,15 +45,6 @@ func FollowUser(c *gin.Context) {
 func UnfollowUser(c *gin.Context) {
 	followerID := c.GetString("user_id")
 	followingID := c.Param("id")
-
-	//// Vérifie s’il y a une subscription active
-	//var sub subscription.Subscription
-	//if err := database.DB.
-	//	Where("subscriber_id = ? AND creator_id = ? AND status = ?", followerID, followingID, "active").
-	//	First(&sub).Error; err == nil {
-	//	c.JSON(http.StatusForbidden, gin.H{"error": "Impossible de unfollow un créateur abonné actif"})
-	//	return
-	//}
 
 	// Supprime le follow
 	if err := database.DB.

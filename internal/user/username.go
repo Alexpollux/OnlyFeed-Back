@@ -34,14 +34,24 @@ func GetUserByUsername(c *gin.Context) {
 	}
 
 	var isFollowing *bool
+	var isSubscriber *bool
+	var subscriptionPrice *float64
 
 	if currentUserID != "" && currentUserID != user.ID {
-		ok, err := utils.IsFollowing(currentUserID, user.ID)
+		okFollow, err := utils.IsFollowing(currentUserID, user.ID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la vérification du suivi"})
 			return
 		}
-		isFollowing = &ok
+		isFollowing = &okFollow
+
+		okSubscribe, okPrice, err := utils.IsSubscriberAndPrice(currentUserID, user.ID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la vérification du suivi"})
+			return
+		}
+		isSubscriber = &okSubscribe
+		subscriptionPrice = okPrice
 	}
 
 	if user.ID == currentUserID {
@@ -54,7 +64,12 @@ func GetUserByUsername(c *gin.Context) {
 		dataUser["is_following"] = isFollowing
 	}
 	if user.IsCreator {
-		dataUser["user"].(gin.H)["subscription_price"] = user.SubscriptionPrice
+		dataUser["is_subscriber"] = isSubscriber
+		if isSubscriber != nil && *isSubscriber {
+			dataUser["subscription_price"] = subscriptionPrice
+		} else {
+			dataUser["subscription_price"] = user.SubscriptionPrice
+		}
 	}
 
 	var followersCount, subscribersCount, totalPosts, paidPosts int64

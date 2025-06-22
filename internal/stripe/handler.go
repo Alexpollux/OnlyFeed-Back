@@ -20,6 +20,13 @@ func CreateAccountLink(c *gin.Context) {
 
 	userId := c.GetString("user_id")
 
+	// Récupérer les infos du créateur
+	var creator user.User
+	if err := database.DB.First(&creator, "id = ? AND is_creator = true", userId).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Créateur introuvable"})
+		return
+	}
+
 	// Création d’un compte connecté Stripe (standard)
 	acctParams := &stripe.AccountParams{
 		Type: stripe.String("standard"),
@@ -33,8 +40,8 @@ func CreateAccountLink(c *gin.Context) {
 	// Lien d'onboarding Stripe
 	linkParams := &stripe.AccountLinkParams{
 		Account:    stripe.String(acct.ID),
-		RefreshURL: stripe.String(fmt.Sprintf("%s/become-creator/error", domain)),
-		ReturnURL:  stripe.String(fmt.Sprintf("%s/become-creator/success?account_id=%s", domain, acct.ID)),
+		RefreshURL: stripe.String(fmt.Sprintf("%s/%s?become_creator=error", domain, creator.Username)),
+		ReturnURL:  stripe.String(fmt.Sprintf("%s/%s?become_creator=success&account_id=%s", domain, creator.Username, acct.ID)),
 		Type:       stripe.String("account_onboarding"),
 	}
 	link, err := accountlink.New(linkParams)
