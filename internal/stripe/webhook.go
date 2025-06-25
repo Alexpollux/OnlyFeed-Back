@@ -70,21 +70,43 @@ func handleCheckoutSessionCompleted(session stripe.CheckoutSession) {
 		return
 	}
 
+	// Récupérer l'ID d'abonnement Stripe
+	subscriptionID := session.Subscription.ID
+	if subscriptionID == "" {
+		fmt.Println("❌ ID d’abonnement Stripe manquant dans la session")
+		return
+	}
+
 	// Vérifie si déjà abonné
 	var existing subscription.Subscription
 	err := database.DB.Where("subscriber_id = ? AND creator_id = ?", subscriberID, creatorID).First(&existing).Error
 	if err == nil {
-		fmt.Println("ℹ️ Déjà abonné")
+		if existing.Status == "active" {
+			fmt.Println("ℹ️ Déjà abonné (actif) → aucune action")
+			return
+		}
+
+		// Réactiver abonnement annulé
+		existing.Status = "active"
+		existing.StripeSubscriptionID = subscriptionID
+		existing.Price = creator.SubscriptionPrice
+		if err := database.DB.Save(&existing).Error; err != nil {
+			fmt.Println("❌ Erreur lors de la réactivation :", err)
+			return
+		}
+
+		fmt.Println("✅ Abonnement réactivé")
 		return
 	}
 
 	// Crée l’abonnement
 	sub := subscription.Subscription{
-		CreatedAt:    time.Now(),
-		SubscriberID: subscriberID,
-		CreatorID:    creatorID,
-		Status:       "active",
-		Price:        creator.SubscriptionPrice,
+		CreatedAt:            time.Now(),
+		SubscriberID:         subscriberID,
+		CreatorID:            creatorID,
+		Status:               "active",
+		StripeSubscriptionID: subscriptionID,
+		Price:                creator.SubscriptionPrice,
 	}
 	if err := database.DB.Create(&sub).Error; err != nil {
 		fmt.Println("❌ Erreur lors de la création de l'abonnement :", err)

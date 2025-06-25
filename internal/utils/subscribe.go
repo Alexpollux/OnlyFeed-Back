@@ -9,12 +9,13 @@ import (
 )
 
 type Subscription struct {
-	ID           string `gorm:"primaryKey"`
-	CreatedAt    time.Time
-	SubscriberID string
-	CreatorID    string
-	Status       string
-	Price        float64
+	ID                   string `gorm:"primaryKey"`
+	CreatedAt            time.Time
+	SubscriberID         string
+	CreatorID            string
+	Status               string
+	StripeSubscriptionID string
+	Price                float64
 }
 
 func IsSubscriberAndPrice(subscriberID, creatorID string) (bool, *float64, error) {

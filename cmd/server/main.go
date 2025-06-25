@@ -109,7 +109,9 @@ func main() {
 	stripeGroup := api.Group("/stripe")
 	stripeGroup.POST("/create-account-link", stripe.CreateAccountLink)
 	stripeGroup.GET("/complete-connect", stripe.CompleteConnect)
+
 	stripeGroup.POST("/create-subscription-session/:creator_id", stripe.CreateSubscriptionSession)
+	stripeGroup.DELETE("/unsubscribe/:creator_id", stripe.Unsubscribe)
 
 	err := r.Run("0.0.0.0:8080")
 	if err != nil {

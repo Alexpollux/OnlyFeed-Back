@@ -29,7 +29,7 @@ func GetPostsByUsername(c *gin.Context) {
 	var isSubscribed bool
 	if requesterID != "" {
 		var count int64
-		database.DB.Table("subscriptions").Where("subscriber_id = ? AND creator_id = ?", requesterID, u.ID).Count(&count)
+		database.DB.Table("subscriptions").Where("subscriber_id = ? AND creator_id = ? AND status = 'active'", requesterID, u.ID).Count(&count)
 		isSubscribed = count > 0
 	}
 

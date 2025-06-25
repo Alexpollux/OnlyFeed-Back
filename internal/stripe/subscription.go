@@ -23,6 +23,19 @@ func CreateSubscriptionSession(c *gin.Context) {
 	userID := c.GetString("user_id")
 	userEmail := c.GetString("user_email")
 
+	// 🔍 Vérifier si déjà abonné
+	var existing struct {
+		Status string
+	}
+	if err := database.DB.
+		Table("subscriptions").
+		Select("status").
+		Where("subscriber_id = ? AND creator_id = ?", userID, creatorID).
+		First(&existing).Error; err == nil && existing.Status == "active" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Vous êtes déjà abonné à ce créateur"})
+		return
+	}
+
 	// Récupérer les infos du créateur
 	var creator user.User
 	if err := database.DB.First(&creator, "id = ? AND is_creator = true", creatorID).Error; err != nil {
@@ -34,7 +47,7 @@ func CreateSubscriptionSession(c *gin.Context) {
 		return
 	}
 
-	// 🔥 Injecter StripeAccount dans les paramètres
+	// Injecter StripeAccount dans les paramètres
 	baseParams := &stripe.Params{}
 	baseParams.StripeAccount = &creator.StripeAccountID
 
