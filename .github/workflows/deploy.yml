@@ -5,15 +5,15 @@ on:
     branches:
       - master
 
-env:
-  GHCR_USER: ${{ secrets.GHCR_USERNAME }}
-  IMAGE_NAME: onlyfeed-backend
-  IMAGE_TAG: latest
-  IMAGE_FULL: ghcr.io/${{ env.GHCR_USER }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
+    env:
+      GHCR_USER: ${{ secrets.GHCR_USERNAME }}
+      IMAGE_NAME: onlyfeed-backend
+      IMAGE_TAG: latest
+      IMAGE_FULL: ghcr.io/${{ env.GHCR_USER }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
     steps:
       - name: Checkout code
