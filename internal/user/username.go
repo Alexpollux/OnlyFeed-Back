@@ -60,6 +60,9 @@ func GetUserByUsername(c *gin.Context) {
 		dataUser["user"].(gin.H)["lastname"] = user.Lastname
 		dataUser["user"].(gin.H)["language"] = user.Language
 		dataUser["user"].(gin.H)["theme"] = user.Theme
+		if user.IsAdmin {
+			dataUser["user"].(gin.H)["is_admin"] = true
+		}
 	} else {
 		dataUser["is_following"] = isFollowing
 	}
@@ -77,7 +80,7 @@ func GetUserByUsername(c *gin.Context) {
 	database.DB.Model(&utils.Follow{}).Where("creator_id = ?", user.ID).Count(&followersCount)
 	database.DB.Table("subscriptions").Where("creator_id = ?", user.ID).Count(&subscribersCount)
 	database.DB.Table("posts").Where("user_id = ?", user.ID).Count(&totalPosts)
-	database.DB.Table("posts").Where("user_id = ? AND is_paid = TRUE", user.ID).Count(&paidPosts)
+	database.DB.Table("postNs").Where("user_id = ? AND is_paid = TRUE", user.ID).Count(&paidPosts)
 
 	stats := dataUser["stats"].(gin.H)
 	stats["followers_count"] = followersCount
