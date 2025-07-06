@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/database"
+	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/logs"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/utils"
 )
 
@@ -18,6 +19,10 @@ func GetUserByUsername(c *gin.Context) {
 	var user User
 	if err := database.DB.Where("username = ?", username).First(&user).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Utilisateur non trouvé"})
+		logs.LogJSON("ERROR", "Failed to fetch user", "/api/users/username/:username", map[string]interface{}{
+			"error":    err.Error(),
+			"username": username,
+		})
 		return
 	}
 
@@ -99,4 +104,7 @@ func GetUserByUsername(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dataUser)
+	logs.LogJSON("INFO", "User fetched successfully", "/api/users/username/:username", map[string]interface{}{
+		"username": username,
+	})
 }

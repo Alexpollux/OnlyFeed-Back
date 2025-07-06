@@ -36,7 +36,6 @@ docker-compose.prod.yml
 
 # Logs
 *.log
-logs/
 
 # IDE
 .vscode/
