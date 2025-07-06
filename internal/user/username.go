@@ -47,7 +47,7 @@ func GetUserByUsername(c *gin.Context) {
 
 		okSubscribe, okPrice, err := utils.IsSubscriberAndPrice(currentUserID, user.ID)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la vérification du suivi"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la vérification de l'abonnement"})
 			return
 		}
 		isSubscriber = &okSubscribe

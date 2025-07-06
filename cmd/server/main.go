@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -37,7 +38,7 @@ func main() {
 
 	// Middleware de logs custom pour ignorer "/"
 	r.Use(gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
-		if param.Path == "/" {
+		if !strings.HasPrefix(param.Path, "/api/") {
 			return ""
 		}
 		return fmt.Sprintf("[GIN] %s | %3d | %13v | %15s |%-7s %#v\n",
