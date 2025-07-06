@@ -16,6 +16,8 @@ spec:
       labels:
         app: onlyfeed-backend
         version: v1
+        environment: production
+        component: api
     spec:
       imagePullSecrets:
         - name: ghcr-secret
