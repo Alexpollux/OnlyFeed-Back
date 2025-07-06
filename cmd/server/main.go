@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -32,7 +33,26 @@ func main() {
 		log.Fatalf("❌ Init S3 : %v", err)
 	}
 
-	r := gin.Default()
+	r := gin.New()
+
+	// Middleware de logs custom pour ignorer "/"
+	r.Use(gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
+		if param.Path == "/" {
+			return ""
+		}
+		return fmt.Sprintf("[GIN] %s | %3d | %13v | %15s |%-7s %#v\n",
+			param.TimeStamp.Format(time.RFC3339),
+			param.StatusCode,
+			param.Latency,
+			param.ClientIP,
+			param.Method,
+			param.Path,
+		)
+	}))
+
+	// Middleware recovery pour éviter que l'app crash sur panic
+	r.Use(gin.Recovery())
+
 	r.Use(cors.New(cors.Config{
 		AllowAllOrigins:  true,
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
