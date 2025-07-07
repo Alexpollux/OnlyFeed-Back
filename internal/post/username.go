@@ -1,10 +1,10 @@
 package post
 
 import (
+	"gorm.io/gorm"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/database"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/user"

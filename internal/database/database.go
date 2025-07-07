@@ -1,9 +1,10 @@
 package database
 
 import (
-	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/logs"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+
+	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/logs"
 )
 
 var DB *gorm.DB

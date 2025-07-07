@@ -2,14 +2,14 @@ package stripe
 
 import (
 	"fmt"
-	"github.com/stripe/stripe-go/v78/checkout/session"
-	"github.com/stripe/stripe-go/v78/price"
-	"github.com/stripe/stripe-go/v78/product"
 	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stripe/stripe-go/v78"
+	"github.com/stripe/stripe-go/v78/checkout/session"
+	"github.com/stripe/stripe-go/v78/price"
+	"github.com/stripe/stripe-go/v78/product"
 
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/database"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/user"

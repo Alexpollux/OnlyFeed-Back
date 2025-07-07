@@ -2,7 +2,6 @@ package post
 
 import (
 	"fmt"
-	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/user"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -14,6 +13,7 @@ import (
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/database"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/logs"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/storage"
+	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/user"
 )
 
 // CreatePost gère la création d'un nouveau post avec média

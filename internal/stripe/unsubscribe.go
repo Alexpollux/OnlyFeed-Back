@@ -1,12 +1,12 @@
 package stripe
 
 import (
-	"github.com/stripe/stripe-go/v78"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/stripe/stripe-go/v78"
 	"github.com/stripe/stripe-go/v78/subscription"
 
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/database"

@@ -3,7 +3,6 @@ package stripe
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/user"
 	"io"
 	"net/http"
 	"os"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/database"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/subscription"
+	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/user"
 )
 
 func HandleStripeWebhook(c *gin.Context) {
