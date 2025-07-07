@@ -1,6 +1,7 @@
 package user
 
 import (
+	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/post"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -83,9 +84,9 @@ func GetUserByUsername(c *gin.Context) {
 	var followersCount, subscribersCount, totalPosts, paidPosts int64
 
 	database.DB.Model(&utils.Follow{}).Where("creator_id = ?", user.ID).Count(&followersCount)
-	database.DB.Table("subscriptions").Where("creator_id = ?", user.ID).Count(&subscribersCount)
-	database.DB.Table("posts").Where("user_id = ?", user.ID).Count(&totalPosts)
-	database.DB.Table("postNs").Where("user_id = ? AND is_paid = TRUE", user.ID).Count(&paidPosts)
+	database.DB.Model(&utils.Subscription{}).Where("creator_id = ?", user.ID).Count(&subscribersCount)
+	database.DB.Model(&post.Post{}).Where("user_id = ?", user.ID).Count(&totalPosts)
+	database.DB.Model(&post.Post{}).Where("user_id = ? AND is_paid = TRUE", user.ID).Count(&paidPosts)
 
 	stats := dataUser["stats"].(gin.H)
 	stats["followers_count"] = followersCount
@@ -97,7 +98,7 @@ func GetUserByUsername(c *gin.Context) {
 		var followupsCount, subscriptionsCount int64
 
 		database.DB.Model(&utils.Follow{}).Where("follower_id = ?", user.ID).Count(&followupsCount)
-		database.DB.Table("subscriptions").Where("subscriber_id = ?", user.ID).Count(&subscriptionsCount)
+		database.DB.Model(&utils.Subscription{}).Where("subscriber_id = ?", user.ID).Count(&subscriptionsCount)
 
 		stats["followups_count"] = followupsCount
 		stats["subscriptions_count"] = subscriptionsCount
