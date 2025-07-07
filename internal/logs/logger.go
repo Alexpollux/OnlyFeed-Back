@@ -7,6 +7,12 @@ import (
 	"time"
 )
 
+// The different severities and their meaning :
+// - INFO = request successful
+// - WARN = not authorized or not found for example (minor error)
+// - ERROR = error occurred due to a problem
+// - FATAL = error completely blocking the app
+
 var logger = log.New(os.Stdout, "", 0)
 
 func LogJSON(level, message string, fields map[string]interface{}) {

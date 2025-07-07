@@ -12,8 +12,9 @@ import (
 
 // GetUserByUsername GET /api/users/username/:username
 func GetUserByUsername(c *gin.Context) {
-	username := c.Param("username")
+	route := c.FullPath()
 
+	username := c.Param("username")
 	currentUserID := c.GetString("user_id")
 
 	var user User
@@ -21,7 +22,7 @@ func GetUserByUsername(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Utilisateur non trouvé"})
 		logs.LogJSON("WARN", "User not found", map[string]interface{}{
 			"error":    err.Error(),
-			"route":    "/api/users/username/:username",
+			"route":    route,
 			"username": username,
 			"userID":   currentUserID,
 		})
@@ -50,7 +51,7 @@ func GetUserByUsername(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la vérification du suivi"})
 			logs.LogJSON("ERROR", "Error during follow-up verification", map[string]interface{}{
 				"error":    err.Error(),
-				"route":    "/api/users/username/:username",
+				"route":    route,
 				"username": username,
 				"userID":   currentUserID,
 			})
@@ -63,7 +64,7 @@ func GetUserByUsername(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la vérification de l'abonnement"})
 			logs.LogJSON("ERROR", "Subscription verification error", map[string]interface{}{
 				"error":    err.Error(),
-				"route":    "/api/users/username/:username",
+				"route":    route,
 				"username": username,
 				"userID":   currentUserID,
 			})
@@ -119,7 +120,7 @@ func GetUserByUsername(c *gin.Context) {
 
 	c.JSON(http.StatusOK, dataUser)
 	logs.LogJSON("INFO", "User fetched successfully", map[string]interface{}{
-		"route":    "/api/users/username/:username",
+		"route":    route,
 		"username": username,
 		"userID":   currentUserID,
 	})
