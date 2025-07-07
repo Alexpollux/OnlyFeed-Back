@@ -5,7 +5,6 @@ import (
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 var DB *gorm.DB
@@ -15,9 +14,7 @@ func Connect(dsn string) {
 	DB, err = gorm.Open(postgres.New(postgres.Config{
 		DSN:                  dsn,
 		PreferSimpleProtocol: true,
-	}), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Error), // Log niveau info pour voir les requêtes SQL
-	})
+	}))
 	if err != nil {
 		log.Fatalf("Erreur de connexion à Supabase: %v", err)
 	}
