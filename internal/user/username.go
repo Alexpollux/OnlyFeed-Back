@@ -1,7 +1,6 @@
 package user
 
 import (
-	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/post"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -85,8 +84,8 @@ func GetUserByUsername(c *gin.Context) {
 
 	database.DB.Model(&utils.Follow{}).Where("creator_id = ?", user.ID).Count(&followersCount)
 	database.DB.Model(&utils.Subscription{}).Where("creator_id = ?", user.ID).Count(&subscribersCount)
-	database.DB.Model(&post.Post{}).Where("user_id = ?", user.ID).Count(&totalPosts)
-	database.DB.Model(&post.Post{}).Where("user_id = ? AND is_paid = TRUE", user.ID).Count(&paidPosts)
+	database.DB.Table("posts").Where("user_id = ?", user.ID).Count(&totalPosts)
+	database.DB.Table("posts").Where("user_id = ? AND is_paid = TRUE", user.ID).Count(&paidPosts)
 
 	stats := dataUser["stats"].(gin.H)
 	stats["followers_count"] = followersCount
