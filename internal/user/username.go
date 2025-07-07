@@ -19,9 +19,11 @@ func GetUserByUsername(c *gin.Context) {
 	var user User
 	if err := database.DB.Where("username = ?", username).First(&user).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Utilisateur non trouvé"})
-		logs.LogJSON("ERROR", "Failed to fetch user", "/api/users/username/:username", map[string]interface{}{
+		logs.LogJSON("WARN", "User not found", map[string]interface{}{
 			"error":    err.Error(),
+			"route":    "/api/users/username/:username",
 			"username": username,
+			"userID":   currentUserID,
 		})
 		return
 	}
@@ -46,6 +48,12 @@ func GetUserByUsername(c *gin.Context) {
 		okFollow, err := utils.IsFollowing(currentUserID, user.ID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la vérification du suivi"})
+			logs.LogJSON("ERROR", "Error during follow-up verification", map[string]interface{}{
+				"error":    err.Error(),
+				"route":    "/api/users/username/:username",
+				"username": username,
+				"userID":   currentUserID,
+			})
 			return
 		}
 		isFollowing = &okFollow
@@ -53,6 +61,12 @@ func GetUserByUsername(c *gin.Context) {
 		okSubscribe, okPrice, err := utils.IsSubscriberAndPrice(currentUserID, user.ID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la vérification de l'abonnement"})
+			logs.LogJSON("ERROR", "Subscription verification error", map[string]interface{}{
+				"error":    err.Error(),
+				"route":    "/api/users/username/:username",
+				"username": username,
+				"userID":   currentUserID,
+			})
 			return
 		}
 		isSubscriber = &okSubscribe
@@ -104,7 +118,9 @@ func GetUserByUsername(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dataUser)
-	logs.LogJSON("INFO", "User fetched successfully", "/api/users/username/:username", map[string]interface{}{
+	logs.LogJSON("INFO", "User fetched successfully", map[string]interface{}{
+		"route":    "/api/users/username/:username",
 		"username": username,
+		"userID":   currentUserID,
 	})
 }

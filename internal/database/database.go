@@ -1,8 +1,7 @@
 package database
 
 import (
-	"log"
-
+	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/logs"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -16,8 +15,8 @@ func Connect(dsn string) {
 		PreferSimpleProtocol: true,
 	}))
 	if err != nil {
-		log.Fatalf("Erreur de connexion à Supabase: %v", err)
+		logs.LogJSON("FATAL", "Supabase connection error", map[string]interface{}{})
 	}
 
-	log.Println("✅ Connexion à la base de données établie")
+	logs.LogJSON("DEBUG", "Database connection established", map[string]interface{}{})
 }
