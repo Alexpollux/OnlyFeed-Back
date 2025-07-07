@@ -3,6 +3,7 @@ package database
 import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/logs"
 )
@@ -14,7 +15,9 @@ func Connect(dsn string) {
 	DB, err = gorm.Open(postgres.New(postgres.Config{
 		DSN:                  dsn,
 		PreferSimpleProtocol: true,
-	}))
+	}), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
 	if err != nil {
 		logs.LogJSON("FATAL", "Supabase connection error", map[string]interface{}{})
 	}
