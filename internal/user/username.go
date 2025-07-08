@@ -123,7 +123,7 @@ func GetUserByUsername(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dataUser)
-	logs.LogJSON("ERROR", "User fetched successfully", map[string]interface{}{
+	logs.LogJSON("INFO", "User fetched successfully", map[string]interface{}{
 		"route":    route,
 		"username": username,
 		"userID":   currentUserID,
