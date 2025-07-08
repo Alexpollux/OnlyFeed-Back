@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/logs"
 	"io"
 	"net/http"
 	"os"
@@ -16,11 +17,16 @@ import (
 
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		route := c.FullPath()
+
 		authHeader := c.GetHeader("Authorization")
 		refreshToken := c.GetHeader("X-Refresh-Token")
 
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token requis"})
+			logs.LogJSON("WARN", "Token required", map[string]interface{}{
+				"route": route,
+			})
 			return
 		}
 
@@ -31,6 +37,11 @@ func AuthMiddleware() gin.HandlerFunc {
 		token, _, err := new(jwt.Parser).ParseUnverified(tokenStr, jwt.MapClaims{})
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token illisible", "details": err.Error()})
+			logs.LogJSON("ERROR", "Illegible token", map[string]interface{}{
+				"error": err.Error(),
+				"route": route,
+				"extra": fmt.Sprintf("Illegible token : %#v", tokenStr),
+			})
 			return
 		}
 
@@ -38,6 +49,10 @@ func AuthMiddleware() gin.HandlerFunc {
 		expFloat, ok := claims["exp"].(float64)
 		if !ok {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token invalide ou champ exp manquant"})
+			logs.LogJSON("ERROR", "Invalid token or missing “exp” field", map[string]interface{}{
+				"route": route,
+				"extra": fmt.Sprintf("Invalid token or missing “exp” field : %v", claims),
+			})
 			return
 		}
 
@@ -49,6 +64,10 @@ func AuthMiddleware() gin.HandlerFunc {
 			newToken, err := refreshAccessToken(refreshToken)
 			if err != nil {
 				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token expiré et refresh échoué", "details": err.Error()})
+				logs.LogJSON("ERROR", "Token expired and refresh failed", map[string]interface{}{
+					"error": err.Error(),
+					"route": route,
+				})
 				return
 			}
 			tokenStr = newToken
@@ -65,6 +84,10 @@ func AuthMiddleware() gin.HandlerFunc {
 		})
 		if err != nil || !token.Valid {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token final invalide", "details": err.Error()})
+			logs.LogJSON("ERROR", "Invalid final token", map[string]interface{}{
+				"error": err.Error(),
+				"route": route,
+			})
 			return
 		}
 
@@ -72,11 +95,19 @@ func AuthMiddleware() gin.HandlerFunc {
 		userID, ok := claims["sub"].(string)
 		if !ok {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "User ID manquant"})
+			logs.LogJSON("ERROR", "User ID missing", map[string]interface{}{
+				"route": route,
+				"extra": fmt.Sprintf("User ID missing: %v", claims),
+			})
 			return
 		}
 		userEmail, ok := claims["email"].(string)
 		if !ok {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "User Email manquant"})
+			logs.LogJSON("ERROR", "User Email missing", map[string]interface{}{
+				"route": route,
+				"extra": fmt.Sprintf("User Email missing : %v", claims),
+			})
 			return
 		}
 

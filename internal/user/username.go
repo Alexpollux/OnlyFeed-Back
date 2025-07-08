@@ -1,6 +1,7 @@
 package user
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -25,6 +26,7 @@ func GetUserByUsername(c *gin.Context) {
 			"route":    route,
 			"username": username,
 			"userID":   currentUserID,
+			"extra":    fmt.Sprintf("User not found : %s", username),
 		})
 		return
 	}
@@ -54,6 +56,7 @@ func GetUserByUsername(c *gin.Context) {
 				"route":    route,
 				"username": username,
 				"userID":   currentUserID,
+				"extra":    fmt.Sprintf("Error during follow-up verification pour %s", username),
 			})
 			return
 		}
@@ -67,6 +70,7 @@ func GetUserByUsername(c *gin.Context) {
 				"route":    route,
 				"username": username,
 				"userID":   currentUserID,
+				"extra":    fmt.Sprintf("Subscription verification error pour %s", username),
 			})
 			return
 		}

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/logs"
 	"io"
 	"net/http"
 	"os"
@@ -20,6 +21,8 @@ import (
 )
 
 func Signup(c *gin.Context) {
+	route := c.FullPath()
+
 	supabaseBaseURL := os.Getenv("NEXT_PUBLIC_SUPABASE_URL")
 	supabaseAnonKey := os.Getenv("SUPABASE_ANON_KEY")
 
@@ -37,17 +40,46 @@ func Signup(c *gin.Context) {
 	}
 
 	if email == "" || password == "" || username == "" {
+		missingFields := ""
+		if email != "" {
+			missingFields = "Email"
+		}
+		if password != "" {
+			if missingFields != "" {
+				missingFields += " & "
+			}
+			missingFields += "Password"
+		}
+		if username != "" {
+			if missingFields != "" {
+				missingFields += " & "
+			}
+			missingFields += "Username"
+		}
+
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Champs requis manquants"})
+		logs.LogJSON("WARN", "Missing required fields", map[string]interface{}{
+			"route": route,
+			"extra": fmt.Sprintf("Missing required fields : %s", missingFields),
+		})
 		return
 	}
 
 	// Vérification unique email/username
 	if user.ExistsByEmail(email) {
 		c.JSON(http.StatusConflict, gin.H{"error": "Email déjà utilisé"})
+		logs.LogJSON("WARN", "Email already used", map[string]interface{}{
+			"route": route,
+			"extra": fmt.Sprintf("Email already used : %s", email),
+		})
 		return
 	}
 	if user.ExistsByUsername(username) {
 		c.JSON(http.StatusConflict, gin.H{"error": "Nom d'utilisateur déjà utilisé"})
+		logs.LogJSON("WARN", "Username already used", map[string]interface{}{
+			"route": route,
+			"extra": fmt.Sprintf("Username already used : %s", username),
+		})
 		return
 	}
 
@@ -55,6 +87,12 @@ func Signup(c *gin.Context) {
 	validLanguages := map[string]bool{"fr": true, "en": true}
 	if language != "" && !validLanguages[language] {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Langue non supportée"})
+		logs.LogJSON("WARN", "Language not supported", map[string]interface{}{
+			"route":    route,
+			"email":    email,
+			"username": username,
+			"extra":    fmt.Sprintf("Language not supported : %s", language),
+		})
 		return
 	}
 
@@ -71,7 +109,12 @@ func Signup(c *gin.Context) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur Supabase Auth"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur de connexion à Supabase"})
+		logs.LogJSON("ERROR", "Supabase Auth Error", map[string]interface{}{
+			"email": email,
+			"error": err.Error(),
+			"route": route,
+		})
 		return
 	}
 	defer resp.Body.Close()
@@ -79,6 +122,11 @@ func Signup(c *gin.Context) {
 	respBytes, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode >= 400 {
 		c.JSON(resp.StatusCode, gin.H{"error": "Erreur Auth", "details": string(respBytes)})
+		logs.LogJSON("ERROR", "Auth Error", map[string]interface{}{
+			"email": email,
+			"route": route,
+			"extra": fmt.Sprintf("Response : %p", resp),
+		})
 		return
 	}
 
@@ -89,12 +137,22 @@ func Signup(c *gin.Context) {
 	}
 	if err := json.Unmarshal(respBytes, &authResp); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur parsing user.id"})
+		logs.LogJSON("ERROR", "Error parsing user.id", map[string]interface{}{
+			"email": email,
+			"error": err.Error(),
+			"route": route,
+			"extra": fmt.Sprintf("Response : %p", respBytes),
+		})
 		return
 	}
 
 	userID := authResp.User.ID
 	if userID == "" {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Aucun ID utilisateur renvoyé"})
+		logs.LogJSON("ERROR", "No user ID returned", map[string]interface{}{
+			"email": email,
+			"route": route,
+		})
 		return
 	}
 
@@ -109,6 +167,11 @@ func Signup(c *gin.Context) {
 		validExtensions := map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".gif": true, ".webp": true, ".heic": true}
 		if !validExtensions[ext] {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Extension fichier invalide"})
+			logs.LogJSON("WARN", "Invalid file extension", map[string]interface{}{
+				"route":  route,
+				"userID": userID,
+				"extra":  fmt.Sprintf("Invalid file extension : %s", ext),
+			})
 			return
 		}
 
@@ -117,7 +180,11 @@ func Signup(c *gin.Context) {
 
 		url, err := storage.UploadToS3(file, filename, contentType, "avatars")
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur upload S3", "details": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de l'upload S3", "details": err.Error()})
+			logs.LogJSON("ERROR", "S3 upload error", map[string]interface{}{
+				"route":  route,
+				"userID": userID,
+			})
 			return
 		}
 		avatarURL = url
@@ -138,7 +205,12 @@ func Signup(c *gin.Context) {
 	}
 
 	if err := database.DB.Create(&newUser).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur insertion base utilisateurs"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la création de l'utilisateur"})
+		logs.LogJSON("ERROR", "Error creating user", map[string]interface{}{
+			"route":  route,
+			"userID": userID,
+			"extra":  fmt.Sprintf("User Data : %v", newUser),
+		})
 		return
 	}
 
@@ -146,9 +218,15 @@ func Signup(c *gin.Context) {
 		"message": "Utilisateur inscrit 🎉",
 		"user":    newUser,
 	})
+	logs.LogJSON("INFO", "User created successfully", map[string]interface{}{
+		"route":  route,
+		"userID": userID,
+	})
 }
 
 func Login(c *gin.Context) {
+	route := c.FullPath()
+
 	supabaseBaseURL := os.Getenv("NEXT_PUBLIC_SUPABASE_URL")
 	supabaseAnonKey := os.Getenv("SUPABASE_ANON_KEY")
 
@@ -158,7 +236,21 @@ func Login(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil || input.Email == "" || input.Password == "" {
+		missingFields := ""
+		if input.Email != "" {
+			missingFields = "Email"
+		}
+		if input.Password != "" {
+			if missingFields != "" {
+				missingFields += " & "
+			}
+			missingFields += "Password"
+		}
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Champs email et password requis"})
+		logs.LogJSON("WARN", "Missing required fields", map[string]interface{}{
+			"route": route,
+			"extra": fmt.Sprintf("Missing required fields : %s", missingFields),
+		})
 		return
 	}
 
@@ -182,6 +274,11 @@ func Login(c *gin.Context) {
 	resp, err := client.Do(req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur de connexion à Supabase"})
+		logs.LogJSON("ERROR", "Supabase Auth Error", map[string]interface{}{
+			"email": input.Email,
+			"error": err.Error(),
+			"route": route,
+		})
 		return
 	}
 	defer resp.Body.Close()
@@ -192,6 +289,11 @@ func Login(c *gin.Context) {
 		c.JSON(resp.StatusCode, gin.H{
 			"error":   "Erreur d'authentification",
 			"details": string(bodyBytes),
+		})
+		logs.LogJSON("ERROR", "Auth Error", map[string]interface{}{
+			"email": input.Email,
+			"route": route,
+			"extra": fmt.Sprintf("Response : %p", resp),
 		})
 		return
 	}
@@ -206,6 +308,12 @@ func Login(c *gin.Context) {
 
 	if err := json.Unmarshal(bodyBytes, &supabaseResp); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur de parsing de la réponse Supabase"})
+		logs.LogJSON("ERROR", "Supabase response parsing error", map[string]interface{}{
+			"email": input.Email,
+			"error": err.Error(),
+			"route": route,
+			"extra": fmt.Sprintf("Response : %p", bodyBytes),
+		})
 		return
 	}
 
@@ -214,6 +322,11 @@ func Login(c *gin.Context) {
 	userID, ok := tokenClaims["sub"].(string)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "ID utilisateur manquant dans le token"})
+		logs.LogJSON("ERROR", "User ID missing from token", map[string]interface{}{
+			"email": input.Email,
+			"route": route,
+			"extra": fmt.Sprintf("Token : %p", tokenClaims),
+		})
 		return
 	}
 
@@ -221,6 +334,12 @@ func Login(c *gin.Context) {
 	var u user.User
 	if err := database.DB.First(&u, "id = ?", userID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Utilisateur introuvable en base"})
+		logs.LogJSON("WARN", "User not found", map[string]interface{}{
+			"error":  err.Error(),
+			"route":  route,
+			"userID": userID,
+			"extra":  fmt.Sprintf("User not found : %s", userID),
+		})
 		return
 	}
 
@@ -251,9 +370,15 @@ func Login(c *gin.Context) {
 		"refresh_token": supabaseResp.RefreshToken,
 		"user":          respUser,
 	})
+	logs.LogJSON("INFO", "User successfully logged in", map[string]interface{}{
+		"route":  route,
+		"userID": userID,
+	})
 }
 
 func Logout(c *gin.Context) {
+	route := c.FullPath()
+
 	supabaseBaseURL := os.Getenv("NEXT_PUBLIC_SUPABASE_URL")
 	supabaseAnonKey := os.Getenv("SUPABASE_ANON_KEY")
 
@@ -285,7 +410,11 @@ func Logout(c *gin.Context) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur requête Supabase"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur de connexion à Supabase"})
+		logs.LogJSON("ERROR", "Supabase Auth Error", map[string]interface{}{
+			"error": err.Error(),
+			"route": route,
+		})
 		return
 	}
 	defer resp.Body.Close()

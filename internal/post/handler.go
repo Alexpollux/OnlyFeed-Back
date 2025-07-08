@@ -84,9 +84,9 @@ func CreatePost(c *gin.Context) {
 	if !validExtensions[ext] {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Extension de fichier invalide"})
 		logs.LogJSON("WARN", "Invalid file extension", map[string]interface{}{
-			"extension": ext,
-			"route":     route,
-			"userID":    userID,
+			"route":  route,
+			"userID": userID,
+			"extra":  fmt.Sprintf("Invalid file extension : %s", ext),
 		})
 		return
 	}
@@ -99,8 +99,8 @@ func CreatePost(c *gin.Context) {
 	// Upload du fichier vers S3
 	url, err := storage.UploadToS3(file, filename, contentType, "posts")
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de l'upload", "details": err.Error()})
-		logs.LogJSON("ERROR", "Upload error", map[string]interface{}{
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de l'upload S3", "details": err.Error()})
+		logs.LogJSON("ERROR", "S3 upload error", map[string]interface{}{
 			"route":  route,
 			"userID": userID,
 		})
@@ -298,11 +298,11 @@ func DeletePost(c *gin.Context) {
 			if err := storage.DeleteFromS3(mediaKey); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Erreur lors de la suppression du média sur S3: %v\n", err)})
 				logs.LogJSON("ERROR", "Error deleting media on S3", map[string]interface{}{
-					"error":        err.Error(),
-					"postID":       postID,
-					"postMediaURL": post.MediaURL,
-					"route":        route,
-					"userID":       userID,
+					"error":  err.Error(),
+					"postID": postID,
+					"route":  route,
+					"userID": userID,
+					"extra":  fmt.Sprintf("Error deleting media on S3 : %s", post.MediaURL),
 				})
 				return
 			}
@@ -313,11 +313,11 @@ func DeletePost(c *gin.Context) {
 	if err := database.DB.Delete(&post).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la suppression du post"})
 		logs.LogJSON("ERROR", "Error deleting post", map[string]interface{}{
-			"error":        err.Error(),
-			"postID":       postID,
-			"postMediaURL": post.MediaURL,
-			"route":        route,
-			"userID":       userID,
+			"error":  err.Error(),
+			"postID": postID,
+			"route":  route,
+			"userID": userID,
+			"extra":  fmt.Sprintf("Error deleting post : %s", post.MediaURL),
 		})
 		return
 	}
@@ -393,8 +393,7 @@ func CreateComment(c *gin.Context) {
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Utilisateur non authentifié"})
 		logs.LogJSON("WARN", "Unauthenticated user", map[string]interface{}{
-			"route":  route,
-			"userID": userID,
+			"route": route,
 		})
 		return
 	}
@@ -408,9 +407,7 @@ func CreateComment(c *gin.Context) {
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		logs.LogJSON("ERROR", "Error retrieving input", map[string]interface{}{
-			"postID": input.PostID,
 			"route":  route,
-			"text":   input.Text,
 			"userID": userID,
 		})
 		return
@@ -483,8 +480,7 @@ func DeleteComment(c *gin.Context) {
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Utilisateur non authentifié"})
 		logs.LogJSON("WARN", "Unauthenticated user", map[string]interface{}{
-			"route":  route,
-			"userID": userID,
+			"route": route,
 		})
 		return
 	}

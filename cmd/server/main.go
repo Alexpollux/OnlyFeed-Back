@@ -73,7 +73,6 @@ func main() {
 	apiAuth := api.Group("/auth")
 	apiAuth.POST("/signup", auth.Signup)
 	apiAuth.POST("/login", auth.Login)
-	apiAuth.POST("/logout", auth.Logout)
 
 	// Appeler uniquement par stripe donc pas de token
 	api.POST("/stripe/webhook", stripe.HandleStripeWebhook)
@@ -98,6 +97,8 @@ func main() {
 
 	// Routes protégées par authentification
 	api.Use(middleware.AuthMiddleware())
+
+	api.POST("/auth/logout", auth.Logout)
 
 	// /api/me
 	apiMe := api.Group("/me")
