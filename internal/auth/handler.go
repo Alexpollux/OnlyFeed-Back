@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/logs"
 	"io"
 	"net/http"
 	"os"
@@ -15,6 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/database"
+	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/logs"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/storage"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/user"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/utils"

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/logs"
 	"io"
 	"net/http"
 	"os"
@@ -13,6 +12,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+
+	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/logs"
 )
 
 func AuthMiddleware() gin.HandlerFunc {
