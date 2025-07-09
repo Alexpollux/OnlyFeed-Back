@@ -152,7 +152,7 @@ func GetUserPosts(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Utilisateur non authentifié"})
-		logs.LogJSON("WARN", "Unauthenticated user", map[string]interface{}{
+		logs.LogJSON("FATAL", "Unauthenticated user", map[string]interface{}{
 			"route": route,
 		})
 		return
