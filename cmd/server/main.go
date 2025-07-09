@@ -14,7 +14,9 @@ import (
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/auth"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/database"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/follow"
+	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/like"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/logs"
+	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/message"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/middleware"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/post"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/storage"
@@ -56,7 +58,7 @@ func main() {
 	r.Use(gin.Recovery())
 
 	r.Use(cors.New(cors.Config{
-		AllowAllOrigins:  true,
+		AllowOrigins:     []string{"http://localhost:5000", "http://127.0.0.1:5000"}, // ✅ URLs spécifiques pour sécurité
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "X-Refresh-Token"},
 		ExposeHeaders:    []string{"Content-Length", "X-New-Access-Token"},
@@ -68,6 +70,7 @@ func main() {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
+	// 🆕 Routes de debug/logs (du GitHub)
 	r.GET("/info", func(c *gin.Context) {
 		route := c.FullPath()
 		c.JSON(200, gin.H{"status": "INFO"})
@@ -113,21 +116,18 @@ func main() {
 	// /api/users/username
 	apiUsersUsername := api.Group("/users/username")
 	apiUsersUsername.GET("/:username", user.GetUserByUsername)
-
 	apiUsersUsername.GET("/:username/posts", post.GetPostsByUsername)
 
 	// Routes publiques pour les posts
-	// Cela permettra de récupérer tous les posts publics sans être connecté
-	api.GET("/posts", post.GetAllPosts) // Retourne seulement les posts gratuits si non authentifié
-
-	// IMPORTANT: Route pour les commentaires AVANT la route générique des posts
+	api.GET("/posts", like.GetPostsWithLikes)                // ✅ Version avec likes
 	api.GET("/posts/:id/comments", post.GetCommentsByPostID) // Récupérer les commentaires d'un post
-
-	api.GET("/posts/:id", post.GetPostByID) // Vérifiera les autorisations pour les posts payants
+	api.GET("/posts/:id/likes", like.GetLikeStatus)          // ✅ Statut des likes (public)
+	api.GET("/posts/:id", like.GetPostByIDWithLikes)         // ✅ Version avec likes
 
 	// Routes protégées par authentification
 	api.Use(middleware.AuthMiddleware())
 
+	// Route logout protégée (du GitHub)
 	api.POST("/auth/logout", auth.Logout)
 
 	// /api/me
@@ -141,15 +141,28 @@ func main() {
 	apiUsers.PUT("/:id", user.UpdateUser)
 	apiUsers.DELETE("/:id", user.DeleteUser)
 
+	// 🆕 Recherche d'utilisateurs pour messagerie
+	api.GET("/users/search", user.SearchUsers) // Rechercher des utilisateurs
+
 	// Routes pour les posts nécessitant une authentification
 	apiPosts := api.Group("/posts")
-	apiPosts.POST("", post.CreatePost)       // Créer un nouveau post
-	apiPosts.GET("/me", post.GetUserPosts)   // Récupérer les posts de l'utilisateur connecté
-	apiPosts.DELETE("/:id", post.DeletePost) // Supprimer un post
+	apiPosts.POST("", post.CreatePost)          // Créer un nouveau post
+	apiPosts.GET("/me", post.GetUserPosts)      // Récupérer les posts de l'utilisateur connecté
+	apiPosts.DELETE("/:id", post.DeletePost)    // Supprimer un post
+	apiPosts.POST("/:id/like", like.ToggleLike) // ✅ Toggle like/unlike
 
 	// Routes pour les commentaires nécessitant une authentification
 	api.POST("/comments", post.CreateComment)       // Créer un nouveau commentaire
 	api.DELETE("/comments/:id", post.DeleteComment) // Supprimer un commentaire
+
+	// 🆕 Routes pour la messagerie
+	apiMessages := api.Group("/messages")
+	apiMessages.GET("/conversations", message.GetConversations)            // Lister toutes les conversations
+	apiMessages.GET("/conversations/:id", message.GetConversationMessages) // Messages d'une conversation
+	apiMessages.POST("/send", message.SendMessage)                         // Envoyer un message
+	apiMessages.PUT("/:id/read", message.MarkMessageAsRead)                // Marquer comme lu
+	apiMessages.DELETE("/:id", message.DeleteMessage)                      // Supprimer un message
+	apiMessages.DELETE("/conversations/:id", message.DeleteConversation)   // Supprimer une conversation
 
 	// /api/follow
 	apiFollow := api.Group("/follow")
@@ -161,7 +174,6 @@ func main() {
 	stripeGroup := api.Group("/stripe")
 	stripeGroup.POST("/create-account-link", stripe.CreateAccountLink)
 	stripeGroup.GET("/complete-connect", stripe.CompleteConnect)
-
 	stripeGroup.POST("/create-subscription-session/:creator_id", stripe.CreateSubscriptionSession)
 	stripeGroup.DELETE("/unsubscribe/:creator_id", stripe.Unsubscribe)
 

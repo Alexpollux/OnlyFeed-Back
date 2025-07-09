@@ -111,3 +111,45 @@ func DeleteUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Utilisateur supprimé ✅"})
 }
+
+// 🆕 SearchUsers GET /api/users/search
+func SearchUsers(c *gin.Context) {
+	query := c.Query("q")
+	currentUserID := c.GetString("user_id")
+
+	if query == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Paramètre de recherche 'q' requis"})
+		return
+	}
+
+	if len(query) < 2 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "La recherche doit contenir au moins 2 caractères"})
+		return
+	}
+
+	var users []User
+	// Recherche par username ou firstname/lastname, exclut l'utilisateur actuel
+	if err := database.DB.
+		Where("(username ILIKE ? OR firstname ILIKE ? OR lastname ILIKE ?) AND id != ?",
+				"%"+query+"%", "%"+query+"%", "%"+query+"%", currentUserID).
+		Limit(20). // Limiter à 20 résultats
+		Find(&users).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la recherche"})
+		return
+	}
+
+	// Formatter la réponse
+	var response []gin.H
+	for _, user := range users {
+		response = append(response, gin.H{
+			"id":         user.ID,
+			"username":   user.Username,
+			"firstname":  user.Firstname,
+			"lastname":   user.Lastname,
+			"avatar_url": user.AvatarURL,
+			"is_creator": user.IsCreator,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"users": response})
+}
