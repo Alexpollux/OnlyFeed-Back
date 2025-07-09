@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/logs"
 	"log"
 	"os"
 	"strings"
@@ -65,6 +66,35 @@ func main() {
 
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
+	})
+
+	r.GET("/info", func(c *gin.Context) {
+		route := c.FullPath()
+		c.JSON(200, gin.H{"status": "INFO"})
+		logs.LogJSON("INFO", "INFOOOOO", map[string]interface{}{
+			"route": route,
+		})
+	})
+	r.GET("/warn", func(c *gin.Context) {
+		route := c.FullPath()
+		c.JSON(200, gin.H{"status": "WARN"})
+		logs.LogJSON("WARN", "WAAAAARN", map[string]interface{}{
+			"route": route,
+		})
+	})
+	r.GET("/error", func(c *gin.Context) {
+		route := c.FullPath()
+		c.JSON(200, gin.H{"status": "ERROR"})
+		logs.LogJSON("ERROR", "ERROOOOR", map[string]interface{}{
+			"route": route,
+		})
+	})
+	r.GET("/fatal", func(c *gin.Context) {
+		route := c.FullPath()
+		c.JSON(200, gin.H{"status": "FATAL"})
+		logs.LogJSON("FATAL", "FATAAAAAL", map[string]interface{}{
+			"route": route,
+		})
 	})
 
 	api := r.Group("/api")
