@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/logs"
 	"log"
 	"os"
 	"strings"
@@ -15,6 +14,7 @@ import (
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/auth"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/database"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/follow"
+	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/logs"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/middleware"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/post"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/storage"

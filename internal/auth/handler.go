@@ -387,10 +387,16 @@ func Logout(c *gin.Context) {
 
 	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token requis"})
+		logs.LogJSON("WARN", "Token required", map[string]interface{}{
+			"route": route,
+		})
 		return
 	}
 	if refreshToken == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Refresh token requis"})
+		logs.LogJSON("WARN", "Refresh token required", map[string]interface{}{
+			"route": route,
+		})
 		return
 	}
 
@@ -400,6 +406,10 @@ func Logout(c *gin.Context) {
 	req, err := http.NewRequest("POST", supabaseBaseURL+"/auth/v1/logout", bytes.NewBuffer(jsonBody))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur création requête Supabase"})
+		logs.LogJSON("ERROR", "Supabase request creation error", map[string]interface{}{
+			"error": err.Error(),
+			"route": route,
+		})
 		return
 	}
 
@@ -422,8 +432,15 @@ func Logout(c *gin.Context) {
 	if resp.StatusCode >= 400 {
 		body, _ := io.ReadAll(resp.Body)
 		c.JSON(resp.StatusCode, gin.H{"error": "Erreur logout Supabase", "details": string(body)})
+		logs.LogJSON("ERROR", "Supabase logout error", map[string]interface{}{
+			"route": route,
+			"extra": fmt.Sprintf("Body request : %p", body),
+		})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Déconnexion réussie"})
+	logs.LogJSON("ERROR", "Successful logout", map[string]interface{}{
+		"route": route,
+	})
 }
