@@ -40,6 +40,7 @@ func CreatePost(c *gin.Context) {
 	if err := database.DB.First(&u, "id = ?", userID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Utilisateur non trouvé"})
 		logs.LogJSON("WARN", "User not found", map[string]interface{}{
+			"error":  err.Error(),
 			"route":  route,
 			"userID": userID,
 		})

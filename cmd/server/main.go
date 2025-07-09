@@ -58,7 +58,7 @@ func main() {
 	r.Use(gin.Recovery())
 
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5000", "http://127.0.0.1:5000"}, // ✅ URLs spécifiques pour sécurité
+		AllowAllOrigins:  true,
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "X-Refresh-Token"},
 		ExposeHeaders:    []string{"Content-Length", "X-New-Access-Token"},
@@ -70,7 +70,7 @@ func main() {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
-	// 🆕 Routes de debug/logs (du GitHub)
+	// Routes de debug/logs (du GitHub)
 	r.GET("/info", func(c *gin.Context) {
 		route := c.FullPath()
 		c.JSON(200, gin.H{"status": "INFO"})
@@ -110,6 +110,8 @@ func main() {
 	// Appeler uniquement par stripe donc pas de token
 	api.POST("/stripe/webhook", stripe.HandleStripeWebhook)
 
+	api.GET("/users/search", user.SearchUsers)
+
 	// authentification optionnelle
 	api.Use(middleware.OptionalAuthMiddleware())
 
@@ -119,15 +121,14 @@ func main() {
 	apiUsersUsername.GET("/:username/posts", post.GetPostsByUsername)
 
 	// Routes publiques pour les posts
-	api.GET("/posts", like.GetPostsWithLikes)                // ✅ Version avec likes
-	api.GET("/posts/:id/comments", post.GetCommentsByPostID) // Récupérer les commentaires d'un post
-	api.GET("/posts/:id/likes", like.GetLikeStatus)          // ✅ Statut des likes (public)
-	api.GET("/posts/:id", like.GetPostByIDWithLikes)         // ✅ Version avec likes
+	api.GET("/posts", like.GetPostsWithLikes)
+	api.GET("/posts/:id/comments", post.GetCommentsByPostID)
+	api.GET("/posts/:id/likes", like.GetLikeStatus)
+	api.GET("/posts/:id", like.GetPostByIDWithLikes)
 
 	// Routes protégées par authentification
 	api.Use(middleware.AuthMiddleware())
 
-	// Route logout protégée (du GitHub)
 	api.POST("/auth/logout", auth.Logout)
 
 	// /api/me
@@ -141,28 +142,26 @@ func main() {
 	apiUsers.PUT("/:id", user.UpdateUser)
 	apiUsers.DELETE("/:id", user.DeleteUser)
 
-	// 🆕 Recherche d'utilisateurs pour messagerie
-	api.GET("/users/search", user.SearchUsers) // Rechercher des utilisateurs
-
 	// Routes pour les posts nécessitant une authentification
 	apiPosts := api.Group("/posts")
-	apiPosts.POST("", post.CreatePost)          // Créer un nouveau post
-	apiPosts.GET("/me", post.GetUserPosts)      // Récupérer les posts de l'utilisateur connecté
-	apiPosts.DELETE("/:id", post.DeletePost)    // Supprimer un post
-	apiPosts.POST("/:id/like", like.ToggleLike) // ✅ Toggle like/unlike
+	apiPosts.POST("", post.CreatePost)
+	apiPosts.GET("/me", post.GetUserPosts)
+	apiPosts.DELETE("/:id", post.DeletePost)
+	apiPosts.POST("/:id/like", like.ToggleLike)
 
 	// Routes pour les commentaires nécessitant une authentification
-	api.POST("/comments", post.CreateComment)       // Créer un nouveau commentaire
-	api.DELETE("/comments/:id", post.DeleteComment) // Supprimer un commentaire
+	apiComments := api.Group("/comments")
+	apiComments.POST("", post.CreateComment)
+	apiComments.DELETE("/:id", post.DeleteComment)
 
-	// 🆕 Routes pour la messagerie
+	// Routes pour la messagerie
 	apiMessages := api.Group("/messages")
-	apiMessages.GET("/conversations", message.GetConversations)            // Lister toutes les conversations
-	apiMessages.GET("/conversations/:id", message.GetConversationMessages) // Messages d'une conversation
-	apiMessages.POST("/send", message.SendMessage)                         // Envoyer un message
-	apiMessages.PUT("/:id/read", message.MarkMessageAsRead)                // Marquer comme lu
-	apiMessages.DELETE("/:id", message.DeleteMessage)                      // Supprimer un message
-	apiMessages.DELETE("/conversations/:id", message.DeleteConversation)   // Supprimer une conversation
+	apiMessages.GET("/conversations", message.GetConversations)
+	apiMessages.GET("/conversations/:id", message.GetConversationMessages)
+	apiMessages.POST("/send", message.SendMessage)
+	apiMessages.PUT("/:id/read", message.MarkMessageAsRead)
+	apiMessages.DELETE("/:id", message.DeleteMessage)
+	apiMessages.DELETE("/conversations/:id", message.DeleteConversation)
 
 	// /api/follow
 	apiFollow := api.Group("/follow")
@@ -176,6 +175,9 @@ func main() {
 	stripeGroup.GET("/complete-connect", stripe.CompleteConnect)
 	stripeGroup.POST("/create-subscription-session/:creator_id", stripe.CreateSubscriptionSession)
 	stripeGroup.DELETE("/unsubscribe/:creator_id", stripe.Unsubscribe)
+
+	apiAdmin := api.Group("/admin")
+	apiAdmin.Use(middleware.AdminOnlyMiddleware())
 
 	err := r.Run("0.0.0.0:8080")
 	if err != nil {
