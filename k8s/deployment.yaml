@@ -129,7 +129,7 @@ spec:
             cpu: "500m"
 
 ---
-# Service interne (ClusterIP)
+# Service interne (ClusterIP) avec NEG pour HTTPS LB
 apiVersion: v1
 kind: Service
 metadata:
@@ -137,14 +137,16 @@ metadata:
   namespace: onlyfeed-backend
   labels:
     app: onlyfeed-backend
+  annotations:
+    cloud.google.com/neg: '{"ingress": true}'
 spec:
   selector:
     app: onlyfeed-backend
   ports:
-  - name: http
-    port: 8080
-    targetPort: 8080
-    protocol: TCP
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
   type: ClusterIP
 
 ---
