@@ -68,7 +68,7 @@ func main() {
 	}))
 
 	r.GET("/", func(c *gin.Context) {
-		c.JSON(200, gin.H{"status": "okayyyy mec"})
+		c.JSON(200, gin.H{"status": "ok"})
 	})
 
 	// Routes de debug/logs (du GitHub)

@@ -110,3 +110,7 @@ jobs:
       - name: Restart deployment
         run: |
           kubectl rollout restart deployment onlyfeed-backend -n onlyfeed-backend
+
+      - name: Force deployment
+        run: |
+          kubectl set image deployment/onlyfeed-backend backend=ghcr.io/arthurdelaporte/onlyfeed-backend:latest -n onlyfeed-backend
