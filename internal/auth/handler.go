@@ -204,8 +204,8 @@ func Signup(c *gin.Context) {
 		Theme:     theme,
 	}
 
-	if err := database.DB.Create(&newUser).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la création de l'utilisateur"})
+	if err := database.DB.Model(&user.User{}).Where("id = ?", userID).Updates(&newUser).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la création de l'utilisateur", "extra": err.Error()})
 		logs.LogJSON("ERROR", "Error creating user", map[string]interface{}{
 			"route":  route,
 			"userID": userID,
