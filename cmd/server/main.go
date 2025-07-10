@@ -59,8 +59,7 @@ func main() {
 	r.Use(gin.Recovery())
 
 	r.Use(cors.New(cors.Config{
-		//AllowOrigins:     []string{"https://onlyfeed-9f05c.web.app/", "http://localhost:5000"},
-		AllowOrigins:     []string{"*"},
+		AllowOrigins:     []string{"https://onlyfeed-9f05c.web.app"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "X-Refresh-Token"},
 		ExposeHeaders:    []string{"Content-Length", "X-New-Access-Token"},
