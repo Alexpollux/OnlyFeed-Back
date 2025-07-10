@@ -22,7 +22,7 @@ func ToggleLike(c *gin.Context) {
 		return
 	}
 
-	// ✅ Vérifier si le post existe (CORRECTION)
+	// Vérifier si le post existe
 	var postCount int64
 	if err := database.DB.Table("posts").Where("id = ?", postID).Count(&postCount).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur de base de données"})
@@ -72,7 +72,7 @@ func GetLikeStatus(c *gin.Context) {
 	postID := c.Param("id")
 	userID := c.GetString("user_id") // Peut être vide si non connecté
 
-	// ✅ Vérifier si le post existe (CORRECTION)
+	// Vérifier si le post existe
 	var postCount int64
 	if err := database.DB.Table("posts").Where("id = ?", postID).Count(&postCount).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur de base de données"})
@@ -87,7 +87,7 @@ func GetLikeStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// ✅ NOUVELLE FONCTION - GetPostByIDWithLikes GET /api/posts/:id (version avec likes)
+// GetPostByIDWithLikes GET /api/posts/:id (version avec likes)
 func GetPostByIDWithLikes(c *gin.Context) {
 	postID := c.Param("id")
 	userID := c.GetString("user_id") // Peut être vide si non connecté
@@ -137,19 +137,25 @@ func GetPostByIDWithLikes(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// GetPostsWithLikes GET /api/posts (version étendue avec likes)
+// GetPostsWithLikes GET /api/posts (version étendue avec likes) - 🔧 FONCTION CORRIGÉE
 func GetPostsWithLikes(c *gin.Context) {
 	userID := c.GetString("user_id")
 	showPaywalled := c.Query("paywalled") == "true"
 
-	query := database.DB.Order("created_at DESC")
+	// 🔧 CORRECTION: Construire la requête plus robuste
+	query := database.DB.Table("posts").Order("created_at DESC")
 
+	// Filtrer les posts selon les règles d'accès
 	if !showPaywalled || userID == "" {
+		// Par défaut ou utilisateur non connecté: montrer uniquement les posts gratuits
 		query = query.Where("is_paid = ?", false)
 	} else {
+		// Utilisateur connecté qui veut voir du contenu payant:
+		// Montrer les posts gratuits et ses propres posts payants
 		query = query.Where("is_paid = ? OR (is_paid = ? AND user_id = ?)", false, true, userID)
 	}
 
+	// 🔧 CORRECTION: Structure pour récupérer les posts
 	var posts []struct {
 		ID          string    `json:"id"`
 		CreatedAt   time.Time `json:"created_at"`
@@ -161,11 +167,15 @@ func GetPostsWithLikes(c *gin.Context) {
 	}
 
 	if err := query.Find(&posts).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la récupération des posts"})
+		// 🔧 AMÉLIORATION: Log détaillé de l'erreur
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Erreur lors de la récupération des posts",
+			"debug": err.Error(), // Temporarily add for debugging
+		})
 		return
 	}
 
-	// Ajouter les informations de likes pour chaque post
+	// 🔧 CORRECTION: Construire la réponse avec likes
 	var postsWithLikes []gin.H
 	for _, post := range posts {
 		likeStatus := getLikeStatus(post.ID, userID)
@@ -184,7 +194,13 @@ func GetPostsWithLikes(c *gin.Context) {
 		postsWithLikes = append(postsWithLikes, postWithLikes)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"posts": postsWithLikes})
+	// 🔧 CORRECTION: Réponse avec structure correcte
+	response := gin.H{
+		"posts": postsWithLikes,
+		"total": len(postsWithLikes),
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 // Fonction utilitaire pour obtenir le statut des likes
