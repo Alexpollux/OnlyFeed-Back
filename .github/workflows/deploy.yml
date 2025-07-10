@@ -103,22 +103,10 @@ jobs:
             NEXT_PUBLIC_SUPABASE_URL: "https://wqbpzxspimzrueuhhhgn.supabase.co"
           EOF
 
-      - name: Recreate GHCR imagePullSecret in cluster
-        run: |
-          kubectl delete secret ghcr-secret -n onlyfeed-backend --ignore-not-found
-
-          kubectl create secret docker-registry ghcr-secret \
-            --docker-server=ghcr.io \
-            --docker-username=${{ env.GHCR_USER }} \
-            --docker-password=${{ secrets.GHCR_PAT }} \
-            -n onlyfeed-backend
-
       - name: Deploy updated resources
         run: |
           kubectl apply -f k8s/deployment.generated.yaml
 
-      - name: Force redeployment with updated annotation
+      - name: Restart deployment
         run: |
-          kubectl patch deployment onlyfeed-backend \
-            -n onlyfeed-backend \
-            -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"force-redeploy\":\"$(date +'%s')\"}}}}}"
+          kubectl rollout restart deployment onlyfeed-backend -n onlyfeed-backend
