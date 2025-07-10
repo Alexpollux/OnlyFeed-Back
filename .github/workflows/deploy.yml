@@ -107,6 +107,8 @@ jobs:
         run: |
           kubectl apply -f k8s/deployment.generated.yaml
 
-      - name: Restart deployment
+      - name: Force redeployment
         run: |
-          kubectl rollout restart deployment onlyfeed-backend -n onlyfeed-backend
+          kubectl patch deployment onlyfeed-backend \
+            -n onlyfeed-backend \
+            -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"redeploy-timestamp\":\"$(date +'%s')\"}}}}}"
