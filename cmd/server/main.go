@@ -57,6 +57,9 @@ func main() {
 	// Middleware recovery pour éviter que l'app crash sur panic
 	r.Use(gin.Recovery())
 
+	logs.LogJSON("DEBUG", fmt.Sprintf("DOMAIN_URL is : %s", os.Getenv("DOMAIN_URL")), map[string]interface{}{})
+	//fmt.Println("DOMAIN_URL is:", os.Getenv("DOMAIN_URL"))
+
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{os.Getenv("DOMAIN_URL")},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
