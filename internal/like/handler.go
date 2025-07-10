@@ -194,26 +194,31 @@ func GetPostByIDWithLikes(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// GetPostsWithLikes GET /api/posts (version étendue avec likes) - 🔧 FONCTION CORRIGÉE
+// GetPostsWithLikes GET /api/posts (version étendue avec likes) - 🔧 FONCTION CORRIGÉE AVEC INFOS UTILISATEUR
 func GetPostsWithLikes(c *gin.Context) {
 	route := c.FullPath()
 	userID := c.GetString("user_id")
 	showPaywalled := c.Query("paywalled") == "true"
 
-	// 🔧 CORRECTION: Construire la requête plus robuste
-	query := database.DB.Table("posts").Order("created_at DESC")
+	// 🔧 CORRECTION: Construire la requête avec JOIN pour récupérer les infos utilisateur
+	query := database.DB.Table("posts").
+		Select(`posts.id, posts.created_at, posts.user_id, posts.title, posts.description, 
+		        posts.media_url, posts.is_paid,
+		        users.username, users.avatar_url, users.is_creator`).
+		Joins("LEFT JOIN users ON posts.user_id = users.id").
+		Order("posts.created_at DESC")
 
 	// Filtrer les posts selon les règles d'accès
 	if !showPaywalled || userID == "" {
 		// Par défaut ou utilisateur non connecté: montrer uniquement les posts gratuits
-		query = query.Where("is_paid = ?", false)
+		query = query.Where("posts.is_paid = ?", false)
 	} else {
 		// Utilisateur connecté qui veut voir du contenu payant:
 		// Montrer les posts gratuits et ses propres posts payants
-		query = query.Where("is_paid = ? OR (is_paid = ? AND user_id = ?)", false, true, userID)
+		query = query.Where("posts.is_paid = ? OR (posts.is_paid = ? AND posts.user_id = ?)", false, true, userID)
 	}
 
-	// 🔧 CORRECTION: Structure pour récupérer les posts
+	// 🔧 CORRECTION: Structure pour récupérer les posts avec infos utilisateur
 	var posts []struct {
 		ID          string    `json:"id"`
 		CreatedAt   time.Time `json:"created_at"`
@@ -222,6 +227,10 @@ func GetPostsWithLikes(c *gin.Context) {
 		Description string    `json:"description"`
 		MediaURL    string    `json:"media_url"`
 		IsPaid      bool      `json:"is_paid"`
+		// 🆕 NOUVEAUX champs utilisateur
+		Username  string `json:"username"`
+		AvatarURL string `json:"avatar_url"`
+		IsCreator bool   `json:"is_creator"`
 	}
 
 	if err := query.Find(&posts).Error; err != nil {
@@ -235,7 +244,7 @@ func GetPostsWithLikes(c *gin.Context) {
 
 	}
 
-	// 🔧 CORRECTION: Construire la réponse avec likes
+	// 🔧 CORRECTION: Construire la réponse avec likes ET infos utilisateur
 	var postsWithLikes []gin.H
 	for _, post := range posts {
 		likeStatus := getLikeStatus(post.ID, userID)
@@ -250,6 +259,10 @@ func GetPostsWithLikes(c *gin.Context) {
 			"is_paid":     post.IsPaid,
 			"like_count":  likeStatus.LikeCount,
 			"is_liked":    likeStatus.IsLiked,
+			// 🆕 NOUVELLES infos utilisateur
+			"username":   post.Username,
+			"avatar_url": post.AvatarURL,
+			"is_creator": post.IsCreator,
 		}
 		postsWithLikes = append(postsWithLikes, postWithLikes)
 	}
