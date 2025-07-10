@@ -2,17 +2,19 @@ package message
 
 import (
 	"fmt"
-	"gorm.io/gorm"
 	"net/http"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
+	"gorm.io/gorm"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/database"
+	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/logs"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/storage"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/user"
 )
@@ -20,6 +22,7 @@ import (
 // GetConversations récupère toutes les conversations de l'utilisateur connecté
 func GetConversations(c *gin.Context) {
 	userID := c.GetString("user_id")
+	route := c.FullPath()
 
 	// Récupérer les conversations où l'utilisateur n'a pas créé de suppression
 	var conversations []Conversation
@@ -34,6 +37,11 @@ func GetConversations(c *gin.Context) {
 		Order("last_message_at DESC NULLS LAST, created_at DESC").
 		Find(&conversations).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la récupération des conversations"})
+		logs.LogJSON("ERROR", "Error during conversation retrieval", map[string]interface{}{
+			"error":  err.Error(),
+			"route":  route,
+			"userID": userID,
+		})
 		return
 	}
 
@@ -125,12 +133,17 @@ func GetConversations(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"conversations": response})
+	logs.LogJSON("INFO", "Conversations retrieved successfully", map[string]interface{}{
+		"route":  route,
+		"userID": userID,
+	})
 }
 
 // GetConversationMessages récupère les messages d'une conversation
 func GetConversationMessages(c *gin.Context) {
 	userID := c.GetString("user_id")
 	conversationID := c.Param("id")
+	route := c.FullPath()
 
 	// Vérifier que l'utilisateur fait partie de la conversation
 	var conversation Conversation
@@ -139,8 +152,19 @@ func GetConversationMessages(c *gin.Context) {
 		First(&conversation).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Conversation non trouvée"})
+			logs.LogJSON("WARN", "Conversation not found", map[string]interface{}{
+				"route":          route,
+				"userID":         userID,
+				"conversationID": conversationID,
+			})
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la récupération de la conversation"})
+			logs.LogJSON("ERROR", "Error during conversation retrieval", map[string]interface{}{
+				"error":          err.Error(),
+				"route":          route,
+				"userID":         userID,
+				"conversationID": conversationID,
+			})
 		}
 		return
 	}
@@ -175,6 +199,12 @@ func GetConversationMessages(c *gin.Context) {
 		Offset(offset).
 		Find(&messages).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la récupération des messages"})
+		logs.LogJSON("ERROR", "Error during data retrieval", map[string]interface{}{
+			"error":          err.Error(),
+			"route":          route,
+			"userID":         userID,
+			"conversationID": conversationID,
+		})
 		return
 	}
 
@@ -217,11 +247,17 @@ func GetConversationMessages(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"messages": response})
+	logs.LogJSON("INFO", "Conversation messages retrieved successfully", map[string]interface{}{
+		"route":          route,
+		"userID":         userID,
+		"conversationID": conversationID,
+	})
 }
 
 // SendMessage envoie un nouveau message
 func SendMessage(c *gin.Context) {
 	userID := c.GetString("user_id")
+	route := c.FullPath()
 
 	// Vérifier si c'est un message avec média ou texte
 	var input CreateMessageInput
@@ -236,6 +272,12 @@ func SendMessage(c *gin.Context) {
 
 		if receiverID == "" || messageTypeStr == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "receiver_id et message_type sont requis"})
+			logs.LogJSON("WARN", "receiver_id and message_type required", map[string]interface{}{
+				"route":       route,
+				"userID":      userID,
+				"receiverID":  receiverID,
+				"messageType": messageTypeStr,
+			})
 			return
 		}
 
@@ -250,6 +292,12 @@ func SendMessage(c *gin.Context) {
 			file, header, err := c.Request.FormFile("media")
 			if err != nil {
 				c.JSON(http.StatusBadRequest, gin.H{"error": "Fichier média requis pour ce type de message"})
+				logs.LogJSON("ERROR", "Media file required for message type", map[string]interface{}{
+					"route":       route,
+					"userID":      userID,
+					"receiverID":  input.ReceiverID,
+					"messageType": input.MessageType,
+				})
 				return
 			}
 			defer file.Close()
@@ -260,6 +308,11 @@ func SendMessage(c *gin.Context) {
 
 			if !validExtensions[ext] {
 				c.JSON(http.StatusBadRequest, gin.H{"error": "Extension de fichier invalide"})
+				logs.LogJSON("ERROR", "Invalid file extension", map[string]interface{}{
+					"route":  route,
+					"userID": userID,
+					"extra":  fmt.Sprintf("Invalid file extension : %s", ext),
+				})
 				return
 			}
 
@@ -271,6 +324,11 @@ func SendMessage(c *gin.Context) {
 			url, err := storage.UploadToS3(file, filename, contentType, "messages")
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de l'upload du fichier"})
+				logs.LogJSON("ERROR", "Error during file upload", map[string]interface{}{
+					"error":  err.Error(),
+					"route":  route,
+					"userID": userID,
+				})
 				return
 			}
 			mediaURL = url
@@ -281,12 +339,21 @@ func SendMessage(c *gin.Context) {
 	var receiver user.User
 	if err := database.DB.First(&receiver, "id = ?", input.ReceiverID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Utilisateur destinataire non trouvé"})
+		logs.LogJSON("WARN", "Receiver user not found", map[string]interface{}{
+			"route":      route,
+			"userID":     userID,
+			"receiverID": input.ReceiverID,
+		})
 		return
 	}
 
 	// Vérifier qu'on n'envoie pas un message à soi-même
 	if userID == input.ReceiverID {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Impossible d'envoyer un message à soi-même"})
+		logs.LogJSON("ERROR", "Cannot send message to self", map[string]interface{}{
+			"route":  route,
+			"userID": userID,
+		})
 		return
 	}
 
@@ -294,6 +361,12 @@ func SendMessage(c *gin.Context) {
 	conversation, err := findOrCreateConversation(userID, input.ReceiverID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la création de la conversation"})
+		logs.LogJSON("ERROR", "Error during conversation creation", map[string]interface{}{
+			"error":      err.Error(),
+			"route":      route,
+			"userID":     userID,
+			"receiverID": input.ReceiverID,
+		})
 		return
 	}
 
@@ -318,6 +391,11 @@ func SendMessage(c *gin.Context) {
 			}
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de l'envoi du message"})
+		logs.LogJSON("ERROR", "Error during message sending", map[string]interface{}{
+			"error":  err.Error(),
+			"route":  route,
+			"userID": userID,
+		})
 		return
 	}
 
@@ -368,12 +446,18 @@ func SendMessage(c *gin.Context) {
 func MarkMessageAsRead(c *gin.Context) {
 	userID := c.GetString("user_id")
 	messageID := c.Param("id")
+	route := c.FullPath()
 
 	var message Message
 	if err := database.DB.
 		Where("id = ? AND receiver_id = ?", messageID, userID).
 		First(&message).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Message non trouvé"})
+		logs.LogJSON("WARN", "Message not found", map[string]interface{}{
+			"route":     route,
+			"userID":    userID,
+			"messageID": messageID,
+		})
 		return
 	}
 
@@ -384,23 +468,41 @@ func MarkMessageAsRead(c *gin.Context) {
 			"read_at": now,
 		}).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la mise à jour du message"})
+			logs.LogJSON("ERROR", "Error during message read update", map[string]interface{}{
+				"error":     err.Error(),
+				"route":     route,
+				"userID":    userID,
+				"messageID": messageID,
+			})
 			return
 		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Message marqué comme lu"})
+	logs.LogJSON("INFO", "Message marked as read", map[string]interface{}{
+		"route":     route,
+		"userID":    userID,
+		"messageID": messageID,
+		"readAt":    message.ReadAt,
+	})
 }
 
 // DeleteMessage supprime un message (soft delete)
 func DeleteMessage(c *gin.Context) {
 	userID := c.GetString("user_id")
 	messageID := c.Param("id")
+	route := c.FullPath()
 
 	var message Message
 	if err := database.DB.
 		Where("id = ? AND sender_id = ?", messageID, userID).
 		First(&message).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Message non trouvé"})
+		logs.LogJSON("WARN", "Message not found", map[string]interface{}{
+			"route":     route,
+			"userID":    userID,
+			"messageID": messageID,
+		})
 		return
 	}
 
@@ -410,16 +512,29 @@ func DeleteMessage(c *gin.Context) {
 		"deleted_at": now,
 	}).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la suppression du message"})
+		logs.LogJSON("ERROR", "Error during message deletion", map[string]interface{}{
+			"error":     err.Error(),
+			"route":     route,
+			"userID":    userID,
+			"messageID": messageID,
+		})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Message supprimé"})
+	logs.LogJSON("INFO", "Message deleted successfully", map[string]interface{}{
+		"route":     route,
+		"userID":    userID,
+		"messageID": messageID,
+		"deletedAt": now,
+	})
 }
 
 // DeleteConversation supprime une conversation côté utilisateur (soft delete)
 func DeleteConversation(c *gin.Context) {
 	userID := c.GetString("user_id")
 	conversationID := c.Param("id")
+	route := c.FullPath()
 
 	// Vérifier que l'utilisateur fait partie de la conversation
 	var conversation Conversation
@@ -428,8 +543,19 @@ func DeleteConversation(c *gin.Context) {
 		First(&conversation).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Conversation non trouvée"})
+			logs.LogJSON("WARN", "Conversation not found", map[string]interface{}{
+				"route":          route,
+				"userID":         userID,
+				"conversationID": conversationID,
+			})
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la récupération de la conversation"})
+			logs.LogJSON("ERROR", "Error during conversation retrieval", map[string]interface{}{
+				"error":          err.Error(),
+				"route":          route,
+				"userID":         userID,
+				"conversationID": conversationID,
+			})
 		}
 		return
 	}
@@ -443,11 +569,22 @@ func DeleteConversation(c *gin.Context) {
 	if err == nil {
 		// Déjà supprimée
 		c.JSON(http.StatusOK, gin.H{"message": "Conversation déjà supprimée"})
+		logs.LogJSON("INFO", "Conversation already deleted", map[string]interface{}{
+			"route":          route,
+			"userID":         userID,
+			"conversationID": conversationID,
+		})
 		return
 	}
 
 	if err != gorm.ErrRecordNotFound {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la vérification"})
+		logs.LogJSON("ERROR", "Error during deletion check", map[string]interface{}{
+			"error":          err.Error(),
+			"route":          route,
+			"userID":         userID,
+			"conversationID": conversationID,
+		})
 		return
 	}
 
@@ -461,10 +598,22 @@ func DeleteConversation(c *gin.Context) {
 
 	if err := database.DB.Create(&deletion).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la suppression de la conversation"})
+		logs.LogJSON("ERROR", "Error during conversation deletion", map[string]interface{}{
+			"error":          err.Error(),
+			"route":          route,
+			"userID":         userID,
+			"conversationID": conversationID,
+		})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Conversation supprimée avec succès"})
+	logs.LogJSON("INFO", "Conversation deleted successfully", map[string]interface{}{
+		"route":          route,
+		"userID":         userID,
+		"conversationID": conversationID,
+		"deletedAt":      deletion.DeletedAt,
+	})
 }
 
 // Fonctions utilitaires

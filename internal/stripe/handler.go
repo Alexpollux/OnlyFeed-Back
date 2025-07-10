@@ -11,12 +11,14 @@ import (
 	"github.com/stripe/stripe-go/v78/accountlink"
 
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/database"
+	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/logs"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/user"
 )
 
 func CreateAccountLink(c *gin.Context) {
 	stripe.Key = os.Getenv("STRIPE_SECRET_KEY")
 	domain := os.Getenv("DOMAIN_URL")
+	route := c.FullPath()
 
 	userId := c.GetString("user_id")
 
@@ -24,6 +26,10 @@ func CreateAccountLink(c *gin.Context) {
 	var creator user.User
 	if err := database.DB.First(&creator, "id = ? AND is_creator = true", userId).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Créateur introuvable"})
+		logs.LogJSON("ERROR", "Creator not found", map[string]interface{}{
+			"route":  route,
+			"userID": userId,
+		})
 		return
 	}
 
@@ -34,6 +40,11 @@ func CreateAccountLink(c *gin.Context) {
 	acct, err := account.New(acctParams)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la création du compte Stripe"})
+		logs.LogJSON("ERROR", "Error creating Stripe account", map[string]interface{}{
+			"error":  err.Error(),
+			"route":  route,
+			"userID": userId,
+		})
 		return
 	}
 
@@ -47,12 +58,22 @@ func CreateAccountLink(c *gin.Context) {
 	link, err := accountlink.New(linkParams)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la création du lien d'onboarding Stripe"})
+		logs.LogJSON("ERROR", "Error creating Stripe account link", map[string]interface{}{
+			"error":  err.Error(),
+			"route":  route,
+			"userID": userId,
+		})
 		return
 	}
 
 	// Enregistrer StripeAccountID dans la DB de l'utilisateur
 	if err := database.DB.Model(&user.User{}).Where("id = ?", userId).Update("stripe_account_id", acct.ID).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur mise à jour StripeAccountID"})
+		logs.LogJSON("ERROR", "Error updating StripeAccountID", map[string]interface{}{
+			"error":  err.Error(),
+			"route":  route,
+			"userID": userId,
+		})
 		return
 	}
 
@@ -66,6 +87,10 @@ func CompleteConnect(c *gin.Context) {
 	accountID := c.Query("account_id")
 	if accountID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Paramètre account_id manquant"})
+		logs.LogJSON("ERROR", "Missing account_id parameter", map[string]interface{}{
+			"userID": userId,
+			"route":  c.FullPath(),
+		})
 		return
 	}
 
@@ -73,6 +98,11 @@ func CompleteConnect(c *gin.Context) {
 	acct, err := account.GetByID(accountID, nil)
 	if err != nil || !acct.ChargesEnabled {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Le compte n’est pas encore activé"})
+		logs.LogJSON("ERROR", "Stripe account not enabled", map[string]interface{}{
+			"error":  err.Error(),
+			"userID": userId,
+			"route":  c.FullPath(),
+		})
 		return
 	}
 
@@ -84,10 +114,19 @@ func CompleteConnect(c *gin.Context) {
 
 	if err := database.DB.Model(&user.User{}).Where("id = ?", userId).Updates(updateData).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur mise à jour utilisateur"})
+		logs.LogJSON("ERROR", "Error updating user to creator", map[string]interface{}{
+			"error":  err.Error(),
+			"userID": userId,
+			"route":  c.FullPath(),
+		})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"success": true})
+	logs.LogJSON("INFO", "User updated to creator successfully", map[string]interface{}{
+		"userID": userId,
+		"route":  c.FullPath(),
+	})
 }
 
 //// Exemple d’intention de paiement avec commission de 10%
