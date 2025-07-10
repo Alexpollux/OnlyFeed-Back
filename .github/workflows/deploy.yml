@@ -43,7 +43,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ env.IMAGE_NAME }}
+          username: ${{ env.GHCR_USER }}
           password: ${{ secrets.GHCR_PAT }}
 
       - name: Set IMAGE_FULL env var
