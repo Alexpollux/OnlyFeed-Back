@@ -28,6 +28,7 @@ func main() {
 	_ = godotenv.Load()
 
 	dsn := os.Getenv("SUPABASE_DB_URL")
+	domain_url := os.Getenv("DOMAIN_URL")
 	if dsn == "" {
 		panic("SUPABASE_DB_URL manquant")
 	}
@@ -57,11 +58,10 @@ func main() {
 	// Middleware recovery pour éviter que l'app crash sur panic
 	r.Use(gin.Recovery())
 
-	logs.LogJSON("DEBUG", fmt.Sprintf("DOMAIN_URL is : %s", os.Getenv("DOMAIN_URL")), map[string]interface{}{})
-	//fmt.Println("DOMAIN_URL is:", os.Getenv("DOMAIN_URL"))
+	logs.LogJSON("DEBUG", fmt.Sprintf("DOMAIN_URL is : %s", domain_url), map[string]interface{}{})
 
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{os.Getenv("DOMAIN_URL")},
+		AllowOrigins:     []string{domain_url},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "X-Refresh-Token"},
 		ExposeHeaders:    []string{"Content-Length", "X-New-Access-Token"},
