@@ -27,7 +27,7 @@ func ToggleLike(c *gin.Context) {
 		return
 	}
 
-	// ✅ Vérifier si le post existe (CORRECTION)
+	//  Vérifier si le post existe (CORRECTION)
 	var postCount int64
 	if err := database.DB.Table("posts").Where("id = ?", postID).Count(&postCount).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur de base de données"})
@@ -104,7 +104,7 @@ func GetLikeStatus(c *gin.Context) {
 	postID := c.Param("id")
 	userID := c.GetString("user_id") // Peut être vide si non connecté
 
-	// ✅ Vérifier si le post existe (CORRECTION)
+	//  Vérifier si le post existe (CORRECTION)
 	var postCount int64
 	if err := database.DB.Table("posts").Where("id = ?", postID).Count(&postCount).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur de base de données"})
@@ -130,7 +130,7 @@ func GetLikeStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// ✅ NOUVELLE FONCTION - GetPostByIDWithLikes GET /api/posts/:id (version avec likes)
+//  NOUVELLE FONCTION - GetPostByIDWithLikes GET /api/posts/:id (version avec likes)
 func GetPostByIDWithLikes(c *gin.Context) {
 	route := c.FullPath()
 	postID := c.Param("id")
