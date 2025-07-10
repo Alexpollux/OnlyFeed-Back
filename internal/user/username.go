@@ -31,18 +31,6 @@ func GetUserByUsername(c *gin.Context) {
 		return
 	}
 
-	// Log utilisateur trouvé avec plus de détails
-	logs.LogJSON("INFO", "User successfully retrieved", map[string]interface{}{
-		"route":    route,
-		"username": username,
-		"userID":   currentUserID,
-		"user_details": map[string]interface{}{
-			"id":         user.ID,
-			"username":   user.Username,
-			"is_creator": user.IsCreator,
-		},
-	})
-
 	// On retourne uniquement les champs publics
 	dataUser := gin.H{
 		"user": gin.H{
@@ -135,4 +123,9 @@ func GetUserByUsername(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dataUser)
+	logs.LogJSON("INFO", "User fetched successfully", map[string]interface{}{
+		"route":    route,
+		"username": username,
+		"userID":   currentUserID,
+	})
 }

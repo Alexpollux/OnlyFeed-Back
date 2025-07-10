@@ -28,7 +28,6 @@ func main() {
 	_ = godotenv.Load()
 
 	dsn := os.Getenv("SUPABASE_DB_URL")
-	domainUrl := os.Getenv("DOMAIN_URL")
 	if dsn == "" {
 		panic("SUPABASE_DB_URL manquant")
 	}
@@ -73,13 +72,10 @@ func main() {
 
 	// Routes de debug/logs (du GitHub)
 	r.GET("/info", func(c *gin.Context) {
-		log.Println("Origin header:", c.GetHeader("Origin"))
-		log.Println("DOMAIN_URL:", os.Getenv("DOMAIN_URL"))
 		route := c.FullPath()
-		c.JSON(200, gin.H{"status": "INFORMATION wsh"})
+		c.JSON(200, gin.H{"status": "INFO"})
 		logs.LogJSON("INFO", "INFOOOOO", map[string]interface{}{
 			"route": route,
-			"extra": fmt.Sprintf("DOMAIN_URL is : %s", domainUrl),
 		})
 	})
 	r.GET("/warn", func(c *gin.Context) {
