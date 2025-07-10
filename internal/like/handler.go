@@ -14,11 +14,16 @@ import (
 
 // ToggleLike POST/DELETE /api/posts/:id/like
 func ToggleLike(c *gin.Context) {
+	route := c.FullPath()
 	userID := c.GetString("user_id")
 	postID := c.Param("id")
-
+}
 	if userID == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Utilisateur non authentifié"})
+		logs.LogJSON("WARN", "Unauthenticated user", map[string]interface{}{
+			"route": route,
+			"postID": postID,
+		})
 		return
 	}
 
@@ -26,10 +31,22 @@ func ToggleLike(c *gin.Context) {
 	var postCount int64
 	if err := database.DB.Table("posts").Where("id = ?", postID).Count(&postCount).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur de base de données"})
+		logs.LogJSON("ERROR", "Database error", map[string]interface{}{
+			"error":    err.Error(),
+			"route":    route,
+			"userID":   userID,
+			"postID":   postID,
+		})
+		
 		return
 	}
 	if postCount == 0 {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Post non trouvé"})
+		logs.LogJSON("WARN", "Post not found", map[string]interface{}{
+			"route":    route,
+			"userID":   userID,
+			"postID":   postID,
+		})
 		return
 	}
 
@@ -41,6 +58,12 @@ func ToggleLike(c *gin.Context) {
 		// Le like existe, on le supprime (unlike)
 		if err := database.DB.Delete(&existingLike).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la suppression du like"})
+			logs.LogJSON("ERROR", "Error when unliking", map[string]interface{}{
+				"error":    err.Error(),
+				"route":    route,
+				"userID":   userID,
+				"postID":   postID,
+			})
 			return
 		}
 	} else if err == gorm.ErrRecordNotFound {
@@ -54,11 +77,19 @@ func ToggleLike(c *gin.Context) {
 
 		if err := database.DB.Create(&newLike).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de l'ajout du like"})
+			logs.LogJSON("ERROR", "Error when liking", map[string]interface{}{
+				"error":    err.Error(),
 			return
-		}
+		})
 	} else {
 		// Erreur de base de données
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur de base de données"})
+		logs.LogJSON("ERROR", "Database error", map[string]interface{}{
+			"error":    err.Error(),
+			"route":    route,
+			"userID":   userID,
+			"postID":   postID,
+		})
 		return
 	}
 
@@ -69,6 +100,7 @@ func ToggleLike(c *gin.Context) {
 
 // GetLikeStatus GET /api/posts/:id/likes
 func GetLikeStatus(c *gin.Context) {
+	route := c.FullPath()
 	postID := c.Param("id")
 	userID := c.GetString("user_id") // Peut être vide si non connecté
 
@@ -76,10 +108,21 @@ func GetLikeStatus(c *gin.Context) {
 	var postCount int64
 	if err := database.DB.Table("posts").Where("id = ?", postID).Count(&postCount).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur de base de données"})
+		logs.LogJSON("ERROR", "Database error", map[string]interface{}{
+			"error":    err.Error(),
+			"route":    route,
+			"userID":   userID,
+			"postID":   postID,
+		})
 		return
 	}
 	if postCount == 0 {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Post non trouvé"})
+		logs.LogJSON("WARN", "Post not found", map[string]interface{}{
+			"route":    route,
+			"userID":   userID,
+			"postID":   postID,
+		})
 		return
 	}
 
@@ -89,6 +132,7 @@ func GetLikeStatus(c *gin.Context) {
 
 // ✅ NOUVELLE FONCTION - GetPostByIDWithLikes GET /api/posts/:id (version avec likes)
 func GetPostByIDWithLikes(c *gin.Context) {
+	route := c.FullPath()
 	postID := c.Param("id")
 	userID := c.GetString("user_id") // Peut être vide si non connecté
 
@@ -105,6 +149,11 @@ func GetPostByIDWithLikes(c *gin.Context) {
 
 	if err := database.DB.Table("posts").Where("id = ?", postID).First(&post).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Post non trouvé"})
+		logs.LogJSON("WARN", "Post not found", map[string]interface{}{
+			"route":    route,
+			"userID":   userID,
+			"postID":   postID,
+		})
 		return
 	}
 
@@ -114,6 +163,11 @@ func GetPostByIDWithLikes(c *gin.Context) {
 			// Ici vous pourriez implémenter une vérification d'abonnement
 			// Pour l'instant, seul le créateur peut voir son propre post payant
 			c.JSON(http.StatusForbidden, gin.H{"error": "Accès non autorisé à ce contenu premium"})
+			logs.LogJSON("WARN", "Unauthorized access to premium content", map[string]interface{}{
+				"route":    route,
+				"userID":   userID,
+				"postID":   postID,
+			})
 			return
 		}
 	}
@@ -139,6 +193,7 @@ func GetPostByIDWithLikes(c *gin.Context) {
 
 // GetPostsWithLikes GET /api/posts (version étendue avec likes)
 func GetPostsWithLikes(c *gin.Context) {
+	route := c.FullPath()
 	userID := c.GetString("user_id")
 	showPaywalled := c.Query("paywalled") == "true"
 
@@ -162,7 +217,13 @@ func GetPostsWithLikes(c *gin.Context) {
 
 	if err := query.Find(&posts).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la récupération des posts"})
+		logs.LogJSON("ERROR", "Error during data retrieval", map[string]interface{}{
+			"error":    err.Error(),
+			"route":    route,
+			"userID":   userID,
+		})
 		return
+
 	}
 
 	// Ajouter les informations de likes pour chaque post
@@ -185,6 +246,10 @@ func GetPostsWithLikes(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"posts": postsWithLikes})
+	logs.LogJSON("INFO", "Posts retrieved successfully", map[string]interface{}{
+		"route":    route,
+		"userID":   userID,
+	})	
 }
 
 // Fonction utilitaire pour obtenir le statut des likes
