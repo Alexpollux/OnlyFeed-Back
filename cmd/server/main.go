@@ -77,8 +77,8 @@ func main() {
 		c.JSON(200, gin.H{"status": "INFO"})
 		logs.LogJSON("INFO", "INFOOOOO", map[string]interface{}{
 			"route": route,
+			"extra": fmt.Sprintf("DOMAIN_URL is : %s", domain_url),
 		})
-		logs.LogJSON("DEBUG", fmt.Sprintf("DOMAIN_URL is : %s", domain_url), map[string]interface{}{})
 	})
 	r.GET("/warn", func(c *gin.Context) {
 		route := c.FullPath()
