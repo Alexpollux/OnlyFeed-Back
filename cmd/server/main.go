@@ -76,7 +76,7 @@ func main() {
 		log.Println("Origin header:", c.GetHeader("Origin"))
 		log.Println("DOMAIN_URL:", os.Getenv("DOMAIN_URL"))
 		route := c.FullPath()
-		c.JSON(200, gin.H{"status": "INFO"})
+		c.JSON(200, gin.H{"status": "INFORMATION"})
 		logs.LogJSON("INFO", "INFOOOOO", map[string]interface{}{
 			"route": route,
 			"extra": fmt.Sprintf("DOMAIN_URL is : %s", domainUrl),
