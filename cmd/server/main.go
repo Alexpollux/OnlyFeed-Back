@@ -73,6 +73,8 @@ func main() {
 
 	// Routes de debug/logs (du GitHub)
 	r.GET("/info", func(c *gin.Context) {
+		log.Println("Origin header:", c.GetHeader("Origin"))
+		log.Println("DOMAIN_URL:", os.Getenv("DOMAIN_URL"))
 		route := c.FullPath()
 		c.JSON(200, gin.H{"status": "INFO"})
 		logs.LogJSON("INFO", "INFOOOOO", map[string]interface{}{
