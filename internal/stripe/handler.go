@@ -17,6 +17,7 @@ import (
 func CreateAccountLink(c *gin.Context) {
 	stripe.Key = os.Getenv("STRIPE_SECRET_KEY")
 	domain := os.Getenv("DOMAIN_URL")
+	route := c.FullPath()
 
 	userId := c.GetString("user_id")
 

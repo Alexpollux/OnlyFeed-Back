@@ -35,6 +35,11 @@ func GetConversations(c *gin.Context) {
 		Order("last_message_at DESC NULLS LAST, created_at DESC").
 		Find(&conversations).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la récupération des conversations"})
+		logs.LogJSON("ERROR", "Error during conversation retrieval", map[string]interface{}{
+			"error":         err.Error(),
+			"route":         route,
+			"userID":       userID,
+		})
 		return
 	}
 
@@ -126,6 +131,10 @@ func GetConversations(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"conversations": response})
+	logs.LogJSON("INFO", "Conversations retrieved successfully", map[string]interface{}{
+		"route":  route,
+		"userID": userID,
+	})
 }
 
 // GetConversationMessages récupère les messages d'une conversation
