@@ -107,8 +107,8 @@ jobs:
         run: |
           kubectl apply -f k8s/deployment.generated.yaml
 
-      - name: Force redeployment
+      - name: Force redeployment with updated annotation
         run: |
           kubectl patch deployment onlyfeed-backend \
             -n onlyfeed-backend \
-            -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"redeploy-timestamp\":\"$(date +'%s')\"}}}}}"
+            -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"force-redeploy\":\"$(date +'%s')\"}}}}}"
