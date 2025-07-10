@@ -58,8 +58,6 @@ func main() {
 	// Middleware recovery pour éviter que l'app crash sur panic
 	r.Use(gin.Recovery())
 
-	logs.LogJSON("DEBUG", fmt.Sprintf("DOMAIN_URL is : %s", domain_url), map[string]interface{}{})
-
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{domain_url},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
@@ -71,6 +69,7 @@ func main() {
 
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
+		logs.LogJSON("DEBUG", fmt.Sprintf("DOMAIN_URL is : %s", domain_url), map[string]interface{}{})
 	})
 
 	// Routes de debug/logs (du GitHub)
