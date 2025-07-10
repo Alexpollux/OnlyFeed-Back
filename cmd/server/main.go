@@ -28,7 +28,7 @@ func main() {
 	_ = godotenv.Load()
 
 	dsn := os.Getenv("SUPABASE_DB_URL")
-	domain_url := os.Getenv("DOMAIN_URL")
+	domainUrl := os.Getenv("DOMAIN_URL")
 	if dsn == "" {
 		panic("SUPABASE_DB_URL manquant")
 	}
@@ -59,7 +59,7 @@ func main() {
 	r.Use(gin.Recovery())
 
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{domain_url},
+		AllowOrigins:     []string{"https://onlyfeed-9f05c.web.app/", "http://localhost:5000"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "X-Refresh-Token"},
 		ExposeHeaders:    []string{"Content-Length", "X-New-Access-Token"},
@@ -77,7 +77,7 @@ func main() {
 		c.JSON(200, gin.H{"status": "INFO"})
 		logs.LogJSON("INFO", "INFOOOOO", map[string]interface{}{
 			"route": route,
-			"extra": fmt.Sprintf("DOMAIN_URL is : %s", domain_url),
+			"extra": fmt.Sprintf("DOMAIN_URL is : %s", domainUrl),
 		})
 	})
 	r.GET("/warn", func(c *gin.Context) {
