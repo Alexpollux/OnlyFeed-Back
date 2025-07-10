@@ -20,6 +20,7 @@ import (
 // GetConversations récupère toutes les conversations de l'utilisateur connecté
 func GetConversations(c *gin.Context) {
 	userID := c.GetString("user_id")
+	route := c.FullPath()
 
 	// Récupérer les conversations où l'utilisateur n'a pas créé de suppression
 	var conversations []Conversation
