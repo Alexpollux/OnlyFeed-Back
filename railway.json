@@ -1,0 +1,9 @@
+# Dans votre repo, créez un fichier railway.json à la racine :
+{
+  "deploy": {
+    "startCommand": "./main",
+    "healthcheckPath": "/",
+    "healthcheckTimeout": 300,
+    "restartPolicyType": "always"
+  }
+}
