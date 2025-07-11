@@ -325,4 +325,4 @@ go run ./cmd/server | jq .
 - [Documentation Stripe Connect](https://stripe.com/docs/connect)
 - [AWS S3 Go SDK](https://docs.aws.amazon.com/sdk-for-go/)
 
-*OnlyFeed* - Une plateforme moderne de partage de contenu avec monétisation intégrée 
+**OnlyFeed** - Une plateforme moderne de partage de contenu avec monétisation intégrée 
