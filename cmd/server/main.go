@@ -20,6 +20,7 @@ import (
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/message"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/middleware"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/post"
+	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/report"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/storage"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/stripe"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/user"
@@ -155,6 +156,10 @@ func main() {
 	apiComments.POST("", post.CreateComment)
 	apiComments.DELETE("/:id", post.DeleteComment)
 
+	// 🆕 Routes pour les signalements
+	apiReports := api.Group("/reports")
+	apiReports.POST("", report.CreateReport)
+
 	// Routes pour la messagerie
 	apiMessages := api.Group("/messages")
 	apiMessages.GET("/conversations", message.GetConversations)
@@ -177,12 +182,21 @@ func main() {
 	stripeGroup.POST("/create-subscription-session/:creator_id", stripe.CreateSubscriptionSession)
 	stripeGroup.DELETE("/unsubscribe/:creator_id", stripe.Unsubscribe)
 
+	// 🆕 Routes d'administration (avec middleware admin)
 	apiAdmin := api.Group("/admin")
 	apiAdmin.Use(middleware.AdminOnlyMiddleware())
 
+	// Statistiques existantes
 	apiAdmin.GET("/stats", admin.GetDashboardStats)
 	apiAdmin.GET("/charts/:type", admin.GetChartData)
 	apiAdmin.GET("/top-users", admin.GetTopUsers)
+
+	// 🆕 Gestion des signalements (admin seulement)
+	apiAdminReports := apiAdmin.Group("/reports")
+	apiAdminReports.GET("", report.GetReports)
+	apiAdminReports.GET("/stats", report.GetReportStats)
+	apiAdminReports.PUT("/:id", report.UpdateReport)
+	apiAdminReports.DELETE("/:id", report.DeleteReport)
 
 	err := r.Run("0.0.0.0:8080")
 	if err != nil {
