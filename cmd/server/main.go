@@ -35,7 +35,7 @@ func main() {
 	database.Connect(dsn)
 
 	if err := storage.InitS3(); err != nil {
-		log.Fatalf("❌ Init S3 : %v", err)
+		log.Fatalf(" Init S3 : %v", err)
 	}
 
 	r := gin.New()
@@ -58,17 +58,9 @@ func main() {
 	// Middleware recovery pour éviter que l'app crash sur panic
 	r.Use(gin.Recovery())
 
-	// 🔧 CORS CORRIGÉ - Configuration compatible avec Flutter web
+	// CORS SOLUTION - Configuration permissive pour développement
 	r.Use(cors.New(cors.Config{
-		AllowOrigins: []string{
-			"http://localhost:3000",           // Flutter web dev
-			"http://localhost:8080",           // Flutter web alternative
-			"http://127.0.0.1:3000",          // Adresse alternative
-			"http://127.0.0.1:8080",          // Adresse alternative
-			"https://localhost:3000",         // HTTPS local
-			"https://127.0.0.1:3000",         // HTTPS local
-			"http://159.89.111.151",          // Ton ancienne IP
-		},
+		AllowAllOrigins: true, // Autorise TOUTES les origines (Flutter web sur n'importe quel port)
 		AllowMethods: []string{
 			"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH",
 		},
@@ -79,12 +71,14 @@ func main() {
 			"Authorization", 
 			"X-Refresh-Token",
 			"X-Requested-With",
+			"Cache-Control",
+			"Pragma",
 		},
 		ExposeHeaders: []string{
 			"Content-Length", 
 			"X-New-Access-Token",
 		},
-		AllowCredentials: true,
+		AllowCredentials: false, // IMPORTANT: Doit être false avec AllowAllOrigins
 		MaxAge:           12 * time.Hour,
 	}))
 
@@ -146,7 +140,7 @@ func main() {
 	apiComments.POST("", post.CreateComment)
 	apiComments.DELETE("/:id", post.DeleteComment)
 
-	// 🆕 Routes pour les signalements
+	// Routes pour les signalements
 	apiReports := api.Group("/reports")
 	apiReports.POST("", report.CreateReport)
 
@@ -172,7 +166,7 @@ func main() {
 	stripeGroup.POST("/create-subscription-session/:creator_id", stripe.CreateSubscriptionSession)
 	stripeGroup.DELETE("/unsubscribe/:creator_id", stripe.Unsubscribe)
 
-	// 🆕 Routes d'administration (avec middleware admin)
+	// Routes d'administration (avec middleware admin)
 	apiAdmin := api.Group("/admin")
 	apiAdmin.Use(middleware.AdminOnlyMiddleware())
 
