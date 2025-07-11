@@ -1,4 +1,3 @@
-# Dans votre repo, créez un fichier railway.json à la racine :
 {
   "deploy": {
     "startCommand": "./main",
