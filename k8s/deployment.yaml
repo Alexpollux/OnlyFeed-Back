@@ -175,8 +175,8 @@ spec:
   selector:
     app: onlyfeed-backend
   ports:
-  - name: http
-    port: 8080
+  - name: https
+    port: 443
     targetPort: 8080
     protocol: TCP
   type: LoadBalancer
