@@ -11,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 
+	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/admin"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/auth"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/database"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/follow"
@@ -58,7 +59,7 @@ func main() {
 	r.Use(gin.Recovery())
 
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"https://onlyfeed-9f05c.web.app"},
+		AllowOrigins:     []string{"http://localhost:5000"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "X-Refresh-Token"},
 		ExposeHeaders:    []string{"Content-Length", "X-New-Access-Token"},
@@ -178,6 +179,10 @@ func main() {
 
 	apiAdmin := api.Group("/admin")
 	apiAdmin.Use(middleware.AdminOnlyMiddleware())
+
+	apiAdmin.GET("/stats", admin.GetDashboardStats)
+	apiAdmin.GET("/charts/:type", admin.GetChartData)
+	apiAdmin.GET("/top-users", admin.GetTopUsers)
 
 	err := r.Run("0.0.0.0:8080")
 	if err != nil {
