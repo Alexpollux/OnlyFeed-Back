@@ -58,11 +58,32 @@ func main() {
 	// Middleware recovery pour éviter que l'app crash sur panic
 	r.Use(gin.Recovery())
 
+	// 🔧 CORS CORRIGÉ - Configuration compatible avec Flutter web
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://159.89.111.151", "*"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "X-Refresh-Token"},
-		ExposeHeaders:    []string{"Content-Length", "X-New-Access-Token"},
+		AllowOrigins: []string{
+			"http://localhost:3000",           // Flutter web dev
+			"http://localhost:8080",           // Flutter web alternative
+			"http://127.0.0.1:3000",          // Adresse alternative
+			"http://127.0.0.1:8080",          // Adresse alternative
+			"https://localhost:3000",         // HTTPS local
+			"https://127.0.0.1:3000",         // HTTPS local
+			"http://159.89.111.151",          // Ton ancienne IP
+		},
+		AllowMethods: []string{
+			"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH",
+		},
+		AllowHeaders: []string{
+			"Origin", 
+			"Content-Type", 
+			"Accept",
+			"Authorization", 
+			"X-Refresh-Token",
+			"X-Requested-With",
+		},
+		ExposeHeaders: []string{
+			"Content-Length", 
+			"X-New-Access-Token",
+		},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
