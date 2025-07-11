@@ -24,9 +24,19 @@ func CreateAccountLink(c *gin.Context) {
 
 	// Récupérer les infos du créateur
 	var creator user.User
-	if err := database.DB.First(&creator, "id = ? AND is_creator = true", userId).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Créateur introuvable"})
-		logs.LogJSON("ERROR", "Creator not found", map[string]interface{}{
+	if err := database.DB.First(&creator, "id = ?", userId).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Utilisateur introuvable"})
+		logs.LogJSON("ERROR", "User not found", map[string]interface{}{
+			"error":  err.Error(),
+			"route":  route,
+			"userID": userId,
+		})
+		return
+	}
+
+	if creator.IsCreator == true {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Déjà créateur"})
+		logs.LogJSON("ERROR", "Already creator", map[string]interface{}{
 			"route":  route,
 			"userID": userId,
 		})
