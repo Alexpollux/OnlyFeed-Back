@@ -160,7 +160,7 @@ func main() {
 	apiAdmin.GET("/charts/:type", admin.GetChartData)
 	apiAdmin.GET("/top-users", admin.GetTopUsers)
 
-	// 🆕 Gestion des signalements (admin seulement)
+	// Gestion des signalements (admin seulement)
 	apiAdminReports := apiAdmin.Group("/reports")
 	apiAdminReports.GET("", report.GetReports)
 	apiAdminReports.GET("/stats", report.GetReportStats)
