@@ -16,7 +16,6 @@ import (
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/database"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/follow"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/like"
-	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/logs"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/message"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/middleware"
 	"github.com/ArthurDelaporte/OnlyFeed-Back/internal/post"
@@ -70,36 +69,6 @@ func main() {
 
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
-	})
-
-	// Routes de debug/logs (du GitHub)
-	r.GET("/info", func(c *gin.Context) {
-		route := c.FullPath()
-		c.JSON(200, gin.H{"status": "INFO"})
-		logs.LogJSON("INFO", "INFOOOOO", map[string]interface{}{
-			"route": route,
-		})
-	})
-	r.GET("/warn", func(c *gin.Context) {
-		route := c.FullPath()
-		c.JSON(200, gin.H{"status": "WARN"})
-		logs.LogJSON("WARN", "WAAAAARN", map[string]interface{}{
-			"route": route,
-		})
-	})
-	r.GET("/error", func(c *gin.Context) {
-		route := c.FullPath()
-		c.JSON(200, gin.H{"status": "ERROR"})
-		logs.LogJSON("ERROR", "ERROOOOR", map[string]interface{}{
-			"route": route,
-		})
-	})
-	r.GET("/fatal", func(c *gin.Context) {
-		route := c.FullPath()
-		c.JSON(200, gin.H{"status": "FATAL"})
-		logs.LogJSON("FATAL", "FATAAAAAL", map[string]interface{}{
-			"route": route,
-		})
 	})
 
 	api := r.Group("/api")
