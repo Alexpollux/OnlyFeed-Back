@@ -60,7 +60,7 @@ func main() {
 	r.Use(gin.Recovery())
 
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://http://159.89.111.151/"},
+		AllowOrigins:     []string{"http://159.89.111.151/"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "X-Refresh-Token"},
 		ExposeHeaders:    []string{"Content-Length", "X-New-Access-Token"},
