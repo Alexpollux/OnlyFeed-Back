@@ -60,7 +60,10 @@ func main() {
 
 	// CORS SOLUTION - Configuration permissive pour développement
 	r.Use(cors.New(cors.Config{
-		AllowAllOrigins: true, // Autorise TOUTES les origines (Flutter web sur n'importe quel port)
+		AllowOrigins: []string{
+    			"https://boisterous-meringue-6fb694.netlify.app",
+    			"http://localhost:3000",
+		},
 		AllowMethods: []string{
 			"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH",
 		},
@@ -78,7 +81,7 @@ func main() {
 			"Content-Length", 
 			"X-New-Access-Token",
 		},
-		AllowCredentials: false, // IMPORTANT: Doit être false avec AllowAllOrigins
+		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
 
